@@ -6,7 +6,6 @@ import '../models/visit.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-
   DatabaseHelper._init();
 
   Future<Database> get database async {
@@ -22,7 +21,6 @@ class DatabaseHelper {
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // جدول المرضى المحدث
     await db.execute('''
       CREATE TABLE patients (
         id TEXT PRIMARY KEY,
@@ -34,8 +32,6 @@ class DatabaseHelper {
         createdAt TEXT NOT NULL
       )
     ''');
-
-    // جدول الزيارات المحدث
     await db.execute('''
       CREATE TABLE visits (
         id TEXT PRIMARY KEY,
@@ -51,5 +47,30 @@ class DatabaseHelper {
     ''');
   }
 
-  // ملاحظة: تذكر تحديث دوال insert و query في هذا الملف لتناسب الحقول الجديدة.
+  Future<List<Patient>> getAllPatients() async {
+    final db = await instance.database;
+    final result = await db.query('patients', orderBy: 'createdAt DESC');
+    return result.map((json) => Patient.fromMap(json)).toList();
+  }
+
+  Future<List<Visit>> getVisitsForPatient(String patientId) async {
+    final db = await instance.database;
+    final result = await db.query('visits', where: 'patientId = ?', whereArgs: [patientId], orderBy: 'visitDate DESC');
+    return result.map((json) => Visit.fromMap(json)).toList();
+  }
+
+  Future<void> createPatient(Patient patient) async {
+    final db = await instance.database;
+    await db.insert('patients', patient.toMap());
+  }
+
+  Future<void> createVisit(Visit visit) async {
+    final db = await instance.database;
+    await db.insert('visits', visit.toMap());
+  }
+
+  Future<void> updateVisit(Visit visit) async {
+    final db = await instance.database;
+    await db.update('visits', visit.toMap(), where: 'id = ?', whereArgs: [visit.id]);
+  }
 }
