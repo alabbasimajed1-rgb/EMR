@@ -1,1 +1,17 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
 
+android {
+    namespace "com.example.emr_app"
+    compileSdkVersion 33
+    defaultConfig {
+        applicationId "com.example.emr_app"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+    }
+}
