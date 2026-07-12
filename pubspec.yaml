@@ -1,8 +1,6 @@
 name: emr_app
 description: "A new Flutter project for Medical Records."
-
-publish_to: 'none' 
-
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -12,11 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # المكتبة الأساسية للتعامل مع قاعدة البيانات المحلية
+  # المكتبات الأساسية للبيانات المحلية
   sqflite: ^2.3.0
-  # المكتبة المطلوبة لتحديد مسارات الملفات (لإدارة قاعدة البيانات)
   path: ^1.9.0
-  # المكتبة التي طلبتها لتخزين الإعدادات وبيانات الدخول محلياً
+  
+  # مكتبة تخزين بيانات الدخول
   shared_preferences: ^2.2.0
   
   cupertino_icons: ^1.0.6
@@ -28,5 +26,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  fl
-
