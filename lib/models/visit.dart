@@ -37,11 +37,11 @@ class Visit {
       id: map['id'],
       patientId: map['patientId'],
       visitDate: DateTime.parse(map['visitDate']),
-      chiefComplaint: map['chiefComplaint'],
-      investigations: map['investigations'],
-      differentialDiagnosis: map['differentialDiagnosis'],
-      finalDiagnosis: map['finalDiagnosis'],
-      treatmentPlan: map['treatmentPlan'],
+      chiefComplaint: map['chiefComplaint'] ?? '',
+      investigations: map['investigations'] ?? '',
+      differentialDiagnosis: map['differentialDiagnosis'] ?? '',
+      finalDiagnosis: map['finalDiagnosis'] ?? '',
+      treatmentPlan: map['treatmentPlan'] ?? '',
     );
   }
 }
