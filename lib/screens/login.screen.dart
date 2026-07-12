@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 
+// ==========================================
+// شاشة تسجيل الدخول (محلي)
+// ==========================================
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -9,116 +13,120 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _pinController = TextEditingController();
-  bool _isError = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
-  void _login() {
-    // رمز الدخول الافتراضي للتطبيق المحلي
-    if (_pinController.text == '1234') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+  Future<void> _login() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('user_email');
+    final savedPassword = prefs.getString('user_password');
+
+    if (_emailController.text.trim() == savedEmail && 
+        _passwordController.text.trim() == savedPassword) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
     } else {
-      setState(() {
-        _isError = true;
-        _pinController.clear();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Incorrect PIN. Default is 1234'), 
-          backgroundColor: Colors.red
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid Email or Password'), backgroundColor: Colors.red),
+        );
+      }
     }
+  }
+
+  // ... (نفس تصميم _buildInputDecoration الموجود في كودك الأصلي) ...
+  InputDecoration _buildInputDecoration(String label, IconData icon, {Widget? suffixIcon}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.grey.shade600),
+      filled: true,
+      fillColor: Colors.white,
+      prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.lock_person_rounded,
-                  size: 80,
-                  color: Color(0xFF1E3A8A),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Welcome Dr. Majed',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Enter PIN to unlock records',
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 40),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: TextField(
-                    controller: _pinController,
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                    textAlign: TextAlign.center,
-                    maxLength: 4,
-                    style: const TextStyle(fontSize: 24, letterSpacing: 10),
-                    decoration: InputDecoration(
-                      counterText: "",
-                      filled: true,
-                      fillColor: Colors.white,
-                      errorText: _isError ? 'Incorrect PIN' : null,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      if (value.length == 4) {
-                        _login(); // تسجيل الدخول تلقائياً عند كتابة 4 أرقام
-                      }
-                      if (_isError) {
-                        setState(() => _isError = false);
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Icon(Icons.medical_services_rounded, size: 70, color: Color(0xFF1E3A8A)),
+              const SizedBox(height: 20),
+              const Text('Medical Records', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
+              const SizedBox(height: 40),
+              TextField(controller: _emailController, decoration: _buildInputDecoration('Email', Icons.email_outlined)),
+              const SizedBox(height: 16),
+              TextField(controller: _passwordController, obscureText: !_isPasswordVisible, decoration: _buildInputDecoration('Password', Icons.lock_outline)),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity, height: 55,
+                child: ElevatedButton(onPressed: _login, child: const Text('Login')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
+                child: const Text('Create Account'),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// شاشة إنشاء حساب جديد (محلي)
+// ==========================================
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _signUp() async {
+    if (_emailController.text.isNotEmpty && _passwordController.text.length >= 6) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', _emailController.text.trim());
+      await prefs.setString('user_password', _passwordController.text.trim());
+      
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid details')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Create Account')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+            const SizedBox(height: 16),
+            TextField(controller: _passwordController, obscureText: true, decoration: const InputDecoration(labelText: 'Password')),
+            const SizedBox(height: 32),
+            ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
+          ],
         ),
       ),
     );
