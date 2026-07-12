@@ -1,43 +1,55 @@
 class Patient {
-  String? id;
-  String name;
-  int age;
-  String gender;
-  String? contact;
-  String? medicalHistory; // يشمل الأمراض المزمنة
-  String createdAt;
+  final String? id;
+  final String fullName;
+  final int age;
+  final String chiefComplaint;
+  final String? medicalHistory;
+  final String investigationAndImaging;
+  final String differentialDiagnosis;
+  final String finalDiagnosis;
+  final String firstTreatmentPlan;
+  final DateTime firstVisitDate;
 
   Patient({
     this.id,
-    required this.name,
+    required this.fullName,
     required this.age,
-    required this.gender,
-    this.contact,
+    required this.chiefComplaint,
     this.medicalHistory,
-    required this.createdAt,
+    required this.investigationAndImaging,
+    required this.differentialDiagnosis,
+    required this.finalDiagnosis,
+    required this.firstTreatmentPlan,
+    required this.firstVisitDate,
   });
+
+  factory Patient.fromMap(Map<String, dynamic> map) {
+    return Patient(
+      id: map['id']?.toString(),
+      fullName: map['fullName'] ?? '',
+      age: map['age'] ?? 0,
+      chiefComplaint: map['chiefComplaint'] ?? '',
+      medicalHistory: map['medicalHistory'],
+      investigationAndImaging: map['investigationAndImaging'] ?? '',
+      differentialDiagnosis: map['differentialDiagnosis'] ?? '',
+      finalDiagnosis: map['finalDiagnosis'] ?? '',
+      firstTreatmentPlan: map['firstTreatmentPlan'] ?? '',
+      firstVisitDate: DateTime.tryParse(map['firstVisitDate'] ?? '') ?? DateTime.now(),
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
+      'fullName': fullName,
       'age': age,
-      'gender': gender,
-      'contact': contact,
+      'chiefComplaint': chiefComplaint,
       'medicalHistory': medicalHistory,
-      'createdAt': createdAt,
+      'investigationAndImaging': investigationAndImaging,
+      'differentialDiagnosis': differentialDiagnosis,
+      'finalDiagnosis': finalDiagnosis,
+      'firstTreatmentPlan': firstTreatmentPlan,
+      'firstVisitDate': firstVisitDate.toIso8601String(),
     };
-  }
-
-  factory Patient.fromMap(Map<String, dynamic> map) {
-    return Patient(
-      id: map['id'],
-      name: map['name'],
-      age: map['age'],
-      gender: map['gender'],
-      contact: map['contact'],
-      medicalHistory: map['medicalHistory'],
-      createdAt: map['createdAt'],
-    );
   }
 }
