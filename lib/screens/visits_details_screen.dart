@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import '../models/visit.dart';
-import '../services/database_helper.dart';
+import '../services/database_helper.dart'; // استخدمنا DatabaseHelper بدلاً من Firestore
 
-class VisitsDetailsScreen extends StatefulWidget {
+class VisitDetailsScreen extends StatefulWidget {
   final Visit visit;
 
-  const VisitsDetailsScreen({super.key, required this.visit});
+  const VisitDetailsScreen({super.key, required this.visit});
 
   @override
-  State<VisitsDetailsScreen> createState() => _VisitsDetailsScreenState();
+  State<VisitDetailsScreen> createState() => _VisitDetailsScreenState();
 }
 
-class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
+class _VisitDetailsScreenState extends State<VisitDetailsScreen> {
   bool _isEditing = false;
-  bool _isLoading = false;
 
   late TextEditingController _procedureController;
   late TextEditingController _investigationsController;
@@ -39,8 +38,7 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
   }
 
   Future<void> _saveChanges() async {
-    setState(() => _isLoading = true);
-
+    // إنشاء كائن الزيارة المحدث
     Visit updatedVisit = Visit(
       id: widget.visit.id,
       patientId: widget.visit.patientId,
@@ -53,6 +51,7 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
     );
 
     try {
+      // التعديل محلياً في قاعدة البيانات
       await DatabaseHelper.instance.updateVisit(updatedVisit);
       
       if (mounted) {
@@ -67,8 +66,6 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
           SnackBar(content: Text('Error updating visit: $e'), backgroundColor: Colors.red),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -83,10 +80,8 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: _isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Icon(_isEditing ? Icons.save_rounded : Icons.edit_rounded),
-            onPressed: _isLoading ? null : () {
+            icon: Icon(_isEditing ? Icons.save_rounded : Icons.edit_rounded),
+            onPressed: () {
               if (_isEditing) {
                 _saveChanges();
               } else {
@@ -117,7 +112,7 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
       child: TextField(
         controller: controller,
         enabled: _isEditing,
-        maxLines: null, 
+        maxLines: null,
         keyboardType: TextInputType.multiline,
         decoration: InputDecoration(
           labelText: label,
@@ -128,10 +123,6 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
-          ),
-          disabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
         ),
       ),
