@@ -32,6 +32,7 @@ class DatabaseHelper {
     const textNullable = 'TEXT';
     const integerType = 'INTEGER NOT NULL';
 
+    // 1. إنشاء جدول المرضى
     await db.execute('''
       CREATE TABLE patients (
         id $idType,
@@ -43,6 +44,7 @@ class DatabaseHelper {
       )
     ''');
 
+    // 2. إنشاء جدول الزيارات
     await db.execute('''
       CREATE TABLE visits (
         id $idType,
@@ -65,17 +67,27 @@ class DatabaseHelper {
   // إضافة مريض جديد
   Future<Patient> createPatient(Patient patient) async {
     final db = await instance.database;
-    // توليد ID فريد بناءً على الوقت إذا لم يكن موجوداً
     patient.id = patient.id ?? DateTime.now().millisecondsSinceEpoch.toString();
     await db.insert('patients', patient.toMap());
     return patient;
   }
 
-  // قراءة كل المرضى (لعرضهم في الشاشة الرئيسية)
+  // قراءة كل المرضى
   Future<List<Patient>> getAllPatients() async {
     final db = await instance.database;
     final result = await db.query('patients', orderBy: 'createdAt DESC');
     return result.map((json) => Patient.fromMap(json)).toList();
+  }
+
+  // تحديث بيانات المريض
+  Future<int> updatePatient(Patient patient) async {
+    final db = await instance.database;
+    return await db.update(
+      'patients',
+      patient.toMap(),
+      where: 'id = ?',
+      whereArgs: [patient.id],
+    );
   }
 
   // ==========================================
@@ -101,6 +113,21 @@ class DatabaseHelper {
     );
     return result.map((json) => Visit.fromMap(json)).toList();
   }
+
+  // تحديث بيانات زيارة موجودة
+  Future<int> updateVisit(Visit visit) async {
+    final db = await instance.database;
+    return await db.update(
+      'visits',
+      visit.toMap(),
+      where: 'id = ?',
+      whereArgs: [visit.id],
+    );
+  }
+
+  // ==========================================
+  // دوال إضافية للنظام
+  // ==========================================
 
   // إغلاق قاعدة البيانات
   Future<void> close() async {
