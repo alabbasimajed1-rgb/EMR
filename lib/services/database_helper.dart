@@ -18,11 +18,12 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
+    // نسخة قاعدة البيانات 1
     return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // جدول المرضى - متوافق مع الحقول في AddEditPatientScreen
+    // جدول المرضى (بناءً على الحقول في الشاشات القديمة)
     await db.execute('''
       CREATE TABLE patients (
         id TEXT PRIMARY KEY,
@@ -39,7 +40,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // جدول الزيارات - متوافق مع الحقول في نموذج الزيارة
+    // جدول الزيارات
     await db.execute('''
       CREATE TABLE visits (
         id TEXT PRIMARY KEY,
@@ -54,19 +55,22 @@ class DatabaseHelper {
     ''');
   }
 
-  // --- دوال المرضى ---
-  
+  // --- دوال المرضى (Patients) ---
+
+  // جلب كل المرضى
   Future<List<Patient>> getPatients() async {
     final db = await database;
     final result = await db.query('patients');
     return result.map((map) => Patient.fromMap(map['id'] as String, map)).toList();
   }
 
+  // إضافة مريض جديد
   Future<void> addPatient(Patient patient) async {
     final db = await database;
     await db.insert('patients', patient.toMap());
   }
 
+  // تحديث بيانات مريض (الدالة التي طلبتها)
   Future<void> updatePatient(Patient patient) async {
     final db = await database;
     await db.update(
@@ -77,8 +81,16 @@ class DatabaseHelper {
     );
   }
 
-  // --- دوال الزيارات ---
+  // --- دوال الزيارات (Visits) ---
 
+  // جلب كل الزيارات (لإحصائيات الشاشة الرئيسية)
+  Future<List<Visit>> getAllVisits() async {
+    final db = await database;
+    final result = await db.query('visits');
+    return result.map((map) => Visit.fromMap(map['id'] as String, map)).toList();
+  }
+
+  // جلب زيارات مريض معين
   Future<List<Visit>> getVisitsForPatient(String patientId) async {
     final db = await database;
     final result = await db.query(
@@ -90,11 +102,13 @@ class DatabaseHelper {
     return result.map((map) => Visit.fromMap(map['id'] as String, map)).toList();
   }
 
+  // إضافة زيارة جديدة
   Future<void> addVisit(Visit visit) async {
     final db = await database;
     await db.insert('visits', visit.toMap());
   }
 
+  // تحديث زيارة
   Future<void> updateVisit(Visit visit) async {
     final db = await database;
     await db.update(
