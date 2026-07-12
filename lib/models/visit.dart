@@ -2,50 +2,46 @@ class Visit {
   String? id;
   String patientId;
   DateTime visitDate;
-  String? procedure;
-  String? investigations;
-  String? treatments;
-  String? advices;
-  DateTime? nextVisitDate;
+  String chiefComplaint;
+  String investigations;
+  String differentialDiagnosis;
+  String finalDiagnosis;
+  String treatmentPlan;
 
   Visit({
     this.id,
     required this.patientId,
     required this.visitDate,
-    this.procedure,
-    this.investigations,
-    this.treatments,
-    this.advices,
-    this.nextVisitDate,
+    required this.chiefComplaint,
+    required this.investigations,
+    required this.differentialDiagnosis,
+    required this.finalDiagnosis,
+    required this.treatmentPlan,
   });
 
-  // تحويل الزيارة للتخزين في الهاتف
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'patientId': patientId,
       'visitDate': visitDate.toIso8601String(),
-      'procedure': procedure,
+      'chiefComplaint': chiefComplaint,
       'investigations': investigations,
-      'treatments': treatments,
-      'advices': advices,
-      'nextVisitDate': nextVisitDate?.toIso8601String(),
+      'differentialDiagnosis': differentialDiagnosis,
+      'finalDiagnosis': finalDiagnosis,
+      'treatmentPlan': treatmentPlan,
     };
   }
 
-  // قراءة الزيارة من الهاتف
   factory Visit.fromMap(Map<String, dynamic> map) {
     return Visit(
       id: map['id'],
       patientId: map['patientId'],
       visitDate: DateTime.parse(map['visitDate']),
-      procedure: map['procedure'],
+      chiefComplaint: map['chiefComplaint'],
       investigations: map['investigations'],
-      treatments: map['treatments'],
-      advices: map['advices'],
-      nextVisitDate: map['nextVisitDate'] != null 
-          ? DateTime.parse(map['nextVisitDate']) 
-          : null,
+      differentialDiagnosis: map['differentialDiagnosis'],
+      finalDiagnosis: map['finalDiagnosis'],
+      treatmentPlan: map['treatmentPlan'],
     );
   }
 }
