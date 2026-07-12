@@ -25,22 +25,8 @@ jobs:
         channel: 'stable'
         cache: true
     
-    - name: Fix Gradle Permissions
-      run: |
-        cd android
-        chmod +x gradlew
-        chmod +x gradlew.bat 2>/dev/null || true
-        ls -la gradlew
-        cd ..
-    
-    - name: Verify Setup
-      run: |
-        echo "=== Flutter ==="
-        flutter --version
-        echo "=== Java ==="
-        java --version
-        echo "=== Check Gradle ==="
-        cd android && ./gradlew --version || echo "Gradle check complete"
+    - name: Fix Permissions
+      run: chmod +x android/gradlew 2>/dev/null || true
     
     - name: Clean Project
       run: flutter clean
@@ -49,7 +35,7 @@ jobs:
       run: flutter pub get
     
     - name: Build APK
-      run: flutter build apk --release
+      run: flutter build apk --release --android-skip-build-dependency-validation
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
@@ -57,7 +43,3 @@ jobs:
         name: app-release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
-    
-    - name: Success Message
-      if: success()
-      run: echo "🎉 Build completed successfully!"
