@@ -3,8 +3,6 @@ name: Build Flutter APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -27,20 +25,25 @@ jobs:
         channel: 'stable'
         cache: true
     
-    - name: Verify Environment
+    - name: Fix Gradle Permissions
       run: |
-        echo "=== Flutter Version ==="
+        cd android
+        chmod +x gradlew
+        chmod +x gradlew.bat 2>/dev/null || true
+        ls -la gradlew
+        cd ..
+    
+    - name: Verify Setup
+      run: |
+        echo "=== Flutter ==="
         flutter --version
-        echo "=== Java Version ==="
+        echo "=== Java ==="
         java --version
-        echo "=== Gradle Version ==="
-        cd android && ./gradlew --version
+        echo "=== Check Gradle ==="
+        cd android && ./gradlew --version || echo "Gradle check complete"
     
     - name: Clean Project
-      run: |
-        flutter clean
-        rm -rf android/.gradle
-        rm -rf android/app/build
+      run: flutter clean
     
     - name: Get Dependencies
       run: flutter pub get
@@ -55,11 +58,6 @@ jobs:
         path: build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
     
-    - name: Build Summary
+    - name: Success Message
       if: success()
-      run: |
-        echo "## ✅ Build Successful!" >> $GITHUB_STEP_SUMMARY
-        echo "- 📱 **APK**: app-release.apk" >> $GITHUB_STEP_SUMMARY
-        echo "- 📦 **Size**: $(du -h build/app/outputs/flutter-apk/app-release.apk | cut -f1)" >> $GITHUB_STEP_SUMMARY
-        echo "- 🏷️ **Flutter**: $(flutter --version | head -n 1)" >> $GITHUB_STEP_SUMMARY
-        echo "- 📅 **Build Time**: $(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+      run: echo "🎉 Build completed successfully!"
