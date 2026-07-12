@@ -6,6 +6,7 @@ import '../models/visit.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+
   DatabaseHelper._init();
 
   Future<Database> get database async {
@@ -21,56 +22,58 @@ class DatabaseHelper {
   }
 
   Future<void> _createDB(Database db, int version) async {
+    // جدول المرضى (مطابق للقديم)
     await db.execute('''
       CREATE TABLE patients (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        age INTEGER NOT NULL,
-        gender TEXT NOT NULL,
-        contact TEXT,
+        fullName TEXT,
+        age INTEGER,
+        gender TEXT,
+        chiefComplaint TEXT,
         medicalHistory TEXT,
-        createdAt TEXT NOT NULL
+        investigationAndImaging TEXT,
+        differentialDiagnosis TEXT,
+        finalDiagnosis TEXT,
+        firstTreatmentPlan TEXT,
+        createdAt TEXT
       )
     ''');
+    // جدول الزيارات
     await db.execute('''
       CREATE TABLE visits (
         id TEXT PRIMARY KEY,
-        patientId TEXT NOT NULL,
-        visitDate TEXT NOT NULL,
-        chiefComplaint TEXT,
+        patientId TEXT,
+        visitDate TEXT,
+        procedure TEXT,
         investigations TEXT,
-        differentialDiagnosis TEXT,
-        finalDiagnosis TEXT,
-        treatmentPlan TEXT,
-        FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+        treatments TEXT,
+        advices TEXT,
+        nextVisitDate TEXT
       )
     ''');
   }
 
-  Future<List<Patient>> getAllPatients() async {
-    final db = await instance.database;
+  // دوال متوافقة مع FirestoreService ليتم استدعاؤها في الشاشات
+  Future<List<Patient>> getPatients() async {
+    final db = await database;
     final result = await db.query('patients', orderBy: 'createdAt DESC');
-    return result.map((json) => Patient.fromMap(json)).toList();
+    return result.map((map) => Patient.fromMap(map['id'] as String, map)).toList();
   }
 
   Future<List<Visit>> getVisitsForPatient(String patientId) async {
-    final db = await instance.database;
+    final db = await database;
     final result = await db.query('visits', where: 'patientId = ?', whereArgs: [patientId], orderBy: 'visitDate DESC');
-    return result.map((json) => Visit.fromMap(json)).toList();
+    return result.map((map) => Visit.fromMap(map['id'] as String, map)).toList();
   }
 
-  Future<void> createPatient(Patient patient) async {
-    final db = await instance.database;
+  // دالة الإضافة (تستخدم في شاشات الإضافة)
+  Future<void> addPatient(Patient patient) async {
+    final db = await database;
     await db.insert('patients', patient.toMap());
   }
 
-  Future<void> createVisit(Visit visit) async {
-    final db = await instance.database;
+  Future<void> addVisit(Visit visit) async {
+    final db = await database;
     await db.insert('visits', visit.toMap());
-  }
-
-  Future<void> updateVisit(Visit visit) async {
-    final db = await instance.database;
-    await db.update('visits', visit.toMap(), where: 'id = ?', whereArgs: [visit.id]);
   }
 }
