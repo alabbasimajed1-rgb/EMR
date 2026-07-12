@@ -1,1 +1,6 @@
-
+#!/bin/bash
+# Gradle start up script
+APP_HOME=$( cd -P "${0%/*}" > /dev/null && printf '%s\n' "$PWD" ) || exit
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+JAVACMD=java
+exec "$JAVACMD" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
