@@ -31,8 +31,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # هنا أضفنا --project-name emr_app لإجبار النظام على الاسم الصحيح
       - name: Generate Clean Android Folder
-        run: flutter create --platforms=android .
+        run: flutter create --project-name emr_app --platforms=android .
 
       - name: Build APK
         run: flutter build apk --release
