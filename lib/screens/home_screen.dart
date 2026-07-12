@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/database_helper.dart';
-import 'add_patient_screen.dart';
-// import 'patients_list_screen.dart'; // قم بتفعيلها لاحقاً
-// import 'reports_screen.dart'; // قم بتفعيلها لاحقاً
-// import 'settings_screen.dart'; // قم بتفعيلها لاحقاً
+import 'add_edit_patient_screen.dart';
+import 'patients_list_screen.dart'; 
+import 'report_screen.dart'; 
+import 'settings_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final dbHelper = DatabaseHelper.instance;
     final patients = await dbHelper.getAllPatients();
     
-    // حساب إجمالي الزيارات لجميع المرضى
     int visitsCount = 0;
     for (var patient in patients) {
       final visits = await dbHelper.getVisitsForPatient(patient.id!);
@@ -95,12 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 '${DateTime.now().day} ${_getMonth(DateTime.now().month)} ${DateTime.now().year}',
                 style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                onPressed: () {
-                  // سيتم إضافة كود تسجيل الخروج لاحقاً
-                },
               ),
             ],
           ),
@@ -199,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'My Patients',
             Icons.list_alt,
             Colors.white,
-            () {}, // سيتم التوجيه لشاشة المرضى
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsListScreen())).then((_) => _loadStatistics()),
             isPrimary: false,
           ),
           _buildActionCard(
@@ -207,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Clinical Reports',
             Icons.bar_chart,
             Colors.white,
-            () {}, // سيتم التوجيه للتقارير
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportScreen())),
             isPrimary: false,
           ),
           _buildActionCard(
@@ -215,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Settings',
             Icons.settings,
             Colors.white,
-            () {}, // سيتم التوجيه للإعدادات
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
             isPrimary: false,
           ),
         ],
