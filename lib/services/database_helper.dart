@@ -1,5 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/patient.dart';
+import '../models/visit.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -17,7 +19,6 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    // فتح قاعدة البيانات وإنشاؤها إذا لم تكن موجودة
     return await openDatabase(
       path,
       version: 1,
@@ -31,7 +32,6 @@ class DatabaseHelper {
     const textNullable = 'TEXT';
     const integerType = 'INTEGER NOT NULL';
 
-    // 1. إنشاء جدول المرضى
     await db.execute('''
       CREATE TABLE patients (
         id $idType,
@@ -43,7 +43,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // 2. إنشاء جدول الزيارات
     await db.execute('''
       CREATE TABLE visits (
         id $idType,
@@ -59,7 +58,51 @@ class DatabaseHelper {
     ''');
   }
 
-  // الدالة الخاصة بإغلاق قاعدة البيانات
+  // ==========================================
+  // دوال إدارة المرضى (Patients)
+  // ==========================================
+
+  // إضافة مريض جديد
+  Future<Patient> createPatient(Patient patient) async {
+    final db = await instance.database;
+    // توليد ID فريد بناءً على الوقت إذا لم يكن موجوداً
+    patient.id = patient.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+    await db.insert('patients', patient.toMap());
+    return patient;
+  }
+
+  // قراءة كل المرضى (لعرضهم في الشاشة الرئيسية)
+  Future<List<Patient>> getAllPatients() async {
+    final db = await instance.database;
+    final result = await db.query('patients', orderBy: 'createdAt DESC');
+    return result.map((json) => Patient.fromMap(json)).toList();
+  }
+
+  // ==========================================
+  // دوال إدارة الزيارات (Visits)
+  // ==========================================
+
+  // إضافة زيارة جديدة
+  Future<Visit> createVisit(Visit visit) async {
+    final db = await instance.database;
+    visit.id = visit.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+    await db.insert('visits', visit.toMap());
+    return visit;
+  }
+
+  // قراءة سجل الزيارات لمريض معين
+  Future<List<Visit>> getVisitsForPatient(String patientId) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'visits',
+      where: 'patientId = ?',
+      whereArgs: [patientId],
+      orderBy: 'visitDate DESC',
+    );
+    return result.map((json) => Visit.fromMap(json)).toList();
+  }
+
+  // إغلاق قاعدة البيانات
   Future<void> close() async {
     final db = await instance.database;
     db.close();
