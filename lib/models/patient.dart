@@ -4,7 +4,8 @@ class Patient {
   int age;
   String gender;
   String? contact;
-  DateTime createdAt;
+  String? medicalHistory; // يشمل الأمراض المزمنة
+  String createdAt;
 
   Patient({
     this.id,
@@ -12,10 +13,10 @@ class Patient {
     required this.age,
     required this.gender,
     this.contact,
+    this.medicalHistory,
     required this.createdAt,
   });
 
-  // تحويل البيانات من التطبيق إلى قاعدة البيانات المحلية
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -23,11 +24,11 @@ class Patient {
       'age': age,
       'gender': gender,
       'contact': contact,
-      'createdAt': createdAt.toIso8601String(),
+      'medicalHistory': medicalHistory,
+      'createdAt': createdAt,
     };
   }
 
-  // استرجاع البيانات من قاعدة البيانات المحلية إلى التطبيق
   factory Patient.fromMap(Map<String, dynamic> map) {
     return Patient(
       id: map['id'],
@@ -35,7 +36,8 @@ class Patient {
       age: map['age'],
       gender: map['gender'],
       contact: map['contact'],
-      createdAt: DateTime.parse(map['createdAt']),
+      medicalHistory: map['medicalHistory'],
+      createdAt: map['createdAt'],
     );
   }
 }
