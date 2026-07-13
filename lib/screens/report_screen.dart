@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/visit.dart';
 import '../models/patient.dart';
-import '../services/database_helper.dart'; // قاعدة البيانات المحلية
+import '../services/database_helper.dart'; 
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -52,7 +52,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final db = await DatabaseHelper.instance.database;
       List<Map<String, dynamic>> visitMaps;
 
-      // جلب الزيارات من القاعدة المحلية
       if (_selectedPatient != null) {
         visitMaps = await db.query('visits', where: 'patientId = ?', whereArgs: [_selectedPatient!.id]);
       } else {
@@ -61,7 +60,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map['id'] as String, map)).toList();
 
-      // تصفية الزيارات بناءً على التاريخ
       if (_dateRange != null) {
         visits = visits.where((v) {
           return v.visitDate.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) &&
@@ -85,8 +83,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       // جلب بيانات العيادة المحفوظة في الإعدادات
       final prefs = await SharedPreferences.getInstance();
-      final doctorName = prefs.getString('dr_name') ?? 'Dr. Majed Abbas';
-      final specialty = prefs.getString('specialty') ?? 'Consultant Anesthesia & Intensive Care';
+      final doctorName = prefs.getString('doctor_name') ?? 'Clinic Doctor';
+      final specialty = prefs.getString('doctor_specialty') ?? 'Medical Specialty';
 
       final arabicFont = await PdfGoogleFonts.cairoRegular();
       final arabicFontBold = await PdfGoogleFonts.cairoBold();
@@ -286,7 +284,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: FutureBuilder<List<Patient>>(
-                    // استخدام FutureBuilder مع القاعدة المحلية
                     future: DatabaseHelper.instance.getAllPatients(),
                     builder: (context, snapshot) {
                       List<Patient> patients = snapshot.data ?? [];
