@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/visits.dart';
-import '../services/database_helper.dart'; // استدعاء قاعدة البيانات المحلية
+import '../models/visit.dart';
+import '../services/database_helper.dart';
 
-class VisitsDetailsScreen extends StatefulWidget {
+class VisitDetailsScreen extends StatefulWidget {
   final Visit visit;
 
-  const VisitsDetailsScreen({super.key, required this.visit});
+  const VisitDetailsScreen({super.key, required this.visit});
 
   @override
-  State<VisitsDetailsScreen> createState() => _VisitsDetailsScreenState();
+  State<VisitDetailsScreen> createState() => _VisitDetailsScreenState();
 }
 
-class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
+class _VisitDetailsScreenState extends State<VisitDetailsScreen> {
   bool _isEditing = false;
 
   late TextEditingController _procedureController;
@@ -38,7 +38,6 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
   }
 
   Future<void> _saveChanges() async {
-    // إنشاء كائن الزيارة المحدث
     Visit updatedVisit = Visit(
       id: widget.visit.id,
       patientId: widget.visit.patientId,
@@ -51,7 +50,6 @@ class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
     );
 
     try {
-      // الحفظ مباشرة في ذاكرة الهاتف عبر DatabaseHelper
       await DatabaseHelper.instance.updateVisit(updatedVisit);
       
       if (mounted) {
