@@ -76,7 +76,7 @@ class DatabaseHelper {
   Future<List<Patient>> getAllPatients() async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query('patients', orderBy: 'createdAt DESC');
-    return List.generate(maps.length, (i) => Patient.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]['id'].toString(), maps[i])); (i) => Patient.fromMap(maps[i]));
   }
 
   Future<int> updatePatient(Patient patient) async {
