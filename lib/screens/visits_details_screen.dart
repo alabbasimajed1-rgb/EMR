@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/visit.dart';
+import '../models/visits.dart';
 import '../services/database_helper.dart'; // استدعاء قاعدة البيانات المحلية
 
-class VisitDetailsScreen extends StatefulWidget {
+class VisitsDetailsScreen extends StatefulWidget {
   final Visit visit;
 
-  const VisitDetailsScreen({super.key, required this.visit});
+  const VisitsDetailsScreen({super.key, required this.visit});
 
   @override
-  State<VisitDetailsScreen> createState() => _VisitDetailsScreenState();
+  State<VisitsDetailsScreen> createState() => _VisitsDetailsScreenState();
 }
 
-class _VisitDetailsScreenState extends State<VisitDetailsScreen> {
+class _VisitsDetailsScreenState extends State<VisitsDetailsScreen> {
   bool _isEditing = false;
 
   late TextEditingController _procedureController;
