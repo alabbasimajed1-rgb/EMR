@@ -27,7 +27,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   DateTime? _nextVisitDate;
   bool _isLoading = false;
 
-  // قائمة لحفظ الصور الملتقطة
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -48,7 +47,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     });
   }
 
-  // دالة التقاط الصور
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
@@ -64,7 +62,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     }
   }
 
-  // نافذة اختيار الكاميرا أو الاستوديو
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
@@ -165,21 +162,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       setState(() => _isLoading = true);
 
       Visit newVisit = Visit(
-        id: null, // تم الإصلاح ليكون متوافقاً مع قاعدة البيانات الجديدة
-        patientId: int.parse(widget.patientId), // تحويل الـ ID إلى رقم
+        id: null, 
+        patientId: int.parse(widget.patientId), 
         visitDate: _visitDate,
         procedure: _procedureController.text.trim(),
         investigations: _investigationsController.text.trim(),
         treatments: _treatmentsController.text.trim(),
         advices: _advicesController.text.trim(),
-        nextVisitDate: _nextVisitDate,
+        nextVisitDate: _nextVisitDate?.toString(), // تم حل المشكلة هنا بتحويل التاريخ إلى نص
       );
 
       try {
-        // حفظ الزيارة أولاً والحصول على رقمها (ID)
         int newVisitId = await DatabaseHelper.instance.insertVisit(newVisit);
         
-        // حفظ الصور برقم الزيارة في التخزين الدائم
         if (_selectedImages.isNotEmpty) {
           final directory = await getApplicationDocumentsDirectory();
           for (var image in _selectedImages) {
@@ -267,7 +262,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       ),
                     ),
 
-                    // تعديل قسم الفحوصات ليشمل الكاميرا
                     _buildInputCard(
                       title: 'Investigations & Imaging',
                       icon: Icons.biotech_outlined,
@@ -287,7 +281,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           ),
                           _buildTemplateChips(_investigationsTemplates, _investigationsController),
                           
-                          // عرض الصور الملتقطة
                           if (_selectedImages.isNotEmpty) ...[
                             const SizedBox(height: 16),
                             const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
