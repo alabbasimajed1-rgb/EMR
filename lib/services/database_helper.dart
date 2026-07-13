@@ -5,7 +5,7 @@ import '../models/visit.dart';
 
 class DatabaseHelper {
   static const _databaseName = "emr_database.db";
-  static const _databaseVersion = 2; // تم التحديث للإصدار الثاني
+  static const _databaseVersion = 2; 
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -24,7 +24,7 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // دالة الترقية لحفظ بياناتك القديمة
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -63,7 +63,6 @@ class DatabaseHelper {
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // إضافة عمود الهاتف بأمان
       await db.execute("ALTER TABLE patients ADD COLUMN phoneNumber TEXT DEFAULT ''");
     }
   }
@@ -76,7 +75,7 @@ class DatabaseHelper {
   Future<List<Patient>> getAllPatients() async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query('patients', orderBy: 'createdAt DESC');
-    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]['id'].toString(), maps[i])); (i) => Patient.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => Patient.fromMap(maps[i]));
   }
 
   Future<int> updatePatient(Patient patient) async {
@@ -98,7 +97,8 @@ class DatabaseHelper {
   Future<List<Visit>> getVisitsForPatient(int patientId) async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query('visits', where: 'patientId = ?', whereArgs: [patientId], orderBy: 'visitDate DESC');
-    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]));
+    // تم إصلاح الخطأ في هذا السطر
+    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]['id'].toString(), maps[i]));
   }
 
   Future<int> updateVisit(Visit visit) async {
