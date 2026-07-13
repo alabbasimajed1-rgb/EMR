@@ -4,7 +4,7 @@ import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import 'add_edit_patient_screen.dart';
 import 'new_visit_screen.dart';
-import 'visit_details_screen.dart'; // تأكد أن اسم ملف تفاصيل الزيارة عندك بهذا الشكل
+import 'visits_details_screen.dart'; // تم تصحيح حرف الـ s هنا
 
 class PatientDetailsScreen extends StatefulWidget {
   final Patient patient;
@@ -56,7 +56,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   }
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
-    // إذا كانت كل الحقول بداخل هذا القسم فارغة، لا تقم برسم القسم أبداً
     bool hasContent = children.any((child) => child is! SizedBox);
     if (!hasContent) return const SizedBox.shrink();
 
@@ -129,7 +128,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // بطاقة بيانات المريض العلوية
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
@@ -186,7 +184,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. التقييم السريري والتاريخ المرضي
                   _buildSectionCard(
                     title: 'Clinical Assessment',
                     icon: Icons.assignment_ind_outlined,
@@ -196,7 +193,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     ],
                   ),
 
-                  // 2. الفحوصات والتشخيص
                   _buildSectionCard(
                     title: 'Diagnostics & Investigations',
                     icon: Icons.biotech_outlined,
@@ -207,7 +203,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     ],
                   ),
 
-                  // 3. الخطة العلاجية
                   _buildSectionCard(
                     title: 'Management Plan',
                     icon: Icons.medical_services_outlined,
@@ -218,7 +213,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // قسم الزيارات
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -277,7 +271,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // ترويسة الزيارة
                                     Row(
                                       children: [
                                         Container(
@@ -306,7 +299,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                       ],
                                     ),
                                     
-                                    // عرض تفاصيل الزيارة بالأسفل مباشرة
                                     if (visit.investigations.isNotEmpty || visit.treatments.isNotEmpty || visit.advices.isNotEmpty) ...[
                                       const SizedBox(height: 16),
                                       const Divider(height: 1),
