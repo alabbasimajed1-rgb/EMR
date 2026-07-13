@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'dart:io';
 import '../models/patient.dart';
 import '../services/database_helper.dart';
 
@@ -28,7 +32,10 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
 
   bool _isLoading = false;
 
-  // القوائم السريعة (Templates) مطابقة للصور تماماً
+  // إعدادات الكاميرا والصور
+  final List<File> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+
   final List<String> _ccTemplates = ['Pre-op Assessment', 'Post-op complication', 'Shortness of breath', 'Decreased LOC', 'Trauma', 'Sepsis', 'Abdominal pain', 'Chest pain'];
   final List<String> _hxTemplates = ['HTN', 'DM Type 2', 'IHD', 'Asthma', 'COPD', 'CKD', 'Smoker', 'No chronic illnesses'];
   final List<String> _invTemplates = ['CBC', 'KFT', 'LFT', 'ECG', 'CXR', 'ABG', 'Coagulation Profile', 'Echocardiography', 'CT Brain'];
@@ -67,6 +74,48 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImages.add(File(pickedFile.path));
+        });
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error taking picture: $e')));
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF1E3A8A)),
+              title: const Text('Take a Photo (Camera)'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF1E3A8A)),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _appendTemplate(TextEditingController controller, String text) {
     final currentText = controller.text;
     setState(() {
@@ -98,7 +147,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({required String title, required IconData icon, Widget? trailing, required List<Widget> children}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -119,7 +168,8 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                   child: Icon(icon, size: 20, color: const Color(0xFF1E3A8A)),
                 ),
                 const SizedBox(width: 12),
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)))),
+                if (trailing != null) trailing,
               ],
             ),
             const SizedBox(height: 20),
@@ -150,10 +200,22 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
       );
 
       try {
+        int patientIdToUse;
         if (widget.patient == null) {
-          await DatabaseHelper.instance.insertPatient(patient);
+          patientIdToUse = await DatabaseHelper.instance.insertPatient(patient);
         } else {
           await DatabaseHelper.instance.updatePatient(patient);
+          patientIdToUse = widget.patient!.id!;
+        }
+
+        // حفظ الصور بعد تأكيد حفظ المريض
+        if (_selectedImages.isNotEmpty) {
+          final directory = await getApplicationDocumentsDirectory();
+          for (var image in _selectedImages) {
+            final fileName = 'baseline_${DateTime.now().millisecondsSinceEpoch}_${p.basename(image.path)}';
+            final savedImage = await image.copy('${directory.path}/$fileName');
+            await DatabaseHelper.instance.insertPatientImage(patientIdToUse, savedImage.path);
+          }
         }
 
         if (mounted) {
@@ -259,6 +321,12 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                     _buildSectionCard(
                       title: 'Diagnostics (Optional)',
                       icon: Icons.biotech_outlined,
+                      trailing: IconButton(
+                        icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
+                        tooltip: 'Attach Baseline Documents',
+                        onPressed: _showImageSourceDialog,
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                      ),
                       children: [
                         TextFormField(
                           controller: _investigationController,
@@ -266,7 +334,49 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                           maxLines: 3,
                         ),
                         _buildTemplateChips(_invTemplates, _investigationController),
+                        
+                        // عرض الصور الملتقطة
+                        if (_selectedImages.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 90,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _selectedImages.length,
+                              itemBuilder: (context, index) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 12, top: 8),
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        image: DecorationImage(image: FileImage(_selectedImages[index]), fit: BoxFit.cover),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 4, top: 0,
+                                      child: InkWell(
+                                        onTap: () => setState(() => _selectedImages.removeAt(index)),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
+                        
                         TextFormField(
                           controller: _differentialDiagnosisController,
                           decoration: InputDecoration(labelText: 'Differential Diagnosis', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
