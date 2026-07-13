@@ -1,168 +1,113 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/patient.dart'; // تأكد من أن المسار يطابق موقع ملفاتك
+import '../models/patient.dart';
 import '../models/visit.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper instance = DatabaseHelper._init();
-  static Database? _database;
+  static const _databaseName = "emr_database.db";
+  static const _databaseVersion = 2; // تم التحديث للإصدار الثاني
 
-  DatabaseHelper._init();
+  DatabaseHelper._privateConstructor();
+  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
+
+  static Database? _database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('emr_local_database.db');
+    _database = await _initDatabase();
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-
+  Future<Database> _initDatabase() async {
+    String path = join(await getDatabasesPath(), _databaseName);
     return await openDatabase(
       path,
-      version: 1,
-      onCreate: _createDB,
+      version: _databaseVersion,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // دالة الترقية لحفظ بياناتك القديمة
     );
   }
 
-  Future _createDB(Database db, int version) async {
-    const idType = 'TEXT PRIMARY KEY';
-    const textType = 'TEXT NOT NULL';
-    const integerType = 'INTEGER NOT NULL';
-
-    // 1. إنشاء جدول المرضى (يطابق كلاس Patient تماماً)
+  Future _onCreate(Database db, int version) async {
     await db.execute('''
-    CREATE TABLE patients (
-      id $idType,
-      fullName $textType,
-      age $integerType,
-      gender $textType,
-      chiefComplaint $textType,
-      medicalHistory $textType,
-      investigationAndImaging $textType,
-      differentialDiagnosis $textType,
-      finalDiagnosis $textType,
-      firstTreatmentPlan $textType,
-      firstVisitDate $textType
-    )
+      CREATE TABLE patients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fullName TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        gender TEXT NOT NULL,
+        phoneNumber TEXT DEFAULT '',
+        chiefComplaint TEXT,
+        medicalHistory TEXT,
+        investigationAndImaging TEXT,
+        differentialDiagnosis TEXT,
+        finalDiagnosis TEXT,
+        firstTreatmentPlan TEXT,
+        createdAt TEXT NOT NULL
+      )
     ''');
 
-    // 2. إنشاء جدول الزيارات (يطابق كلاس Visit تماماً)
     await db.execute('''
-    CREATE TABLE visits (
-      id $idType,
-      patientId $textType,
-      visitDate $textType,
-      procedure $textType,
-      investigations $textType,
-      treatments $textType,
-      advices $textType,
-      nextVisitDate TEXT,
-      FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
-    )
+      CREATE TABLE visits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patientId INTEGER NOT NULL,
+        visitDate TEXT NOT NULL,
+        procedure TEXT NOT NULL,
+        investigations TEXT NOT NULL,
+        treatments TEXT NOT NULL,
+        advices TEXT NOT NULL,
+        nextVisitDate TEXT,
+        FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+      )
     ''');
   }
 
-  // ==========================================
-  //            عمليات المرضى (Patients)
-  // ==========================================
-
-  // إضافة مريض جديد
-  Future<String> insertPatient(Patient patient) async {
-    final db = await instance.database;
-    // توليد ID فريد بناءً على الوقت (بديل لمعرفات Firebase)
-    final id = patient.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-    
-    final data = patient.toMap();
-    data['id'] = id; 
-
-    await db.insert('patients', data, conflictAlgorithm: ConflictAlgorithm.replace);
-    return id;
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // إضافة عمود الهاتف بأمان
+      await db.execute("ALTER TABLE patients ADD COLUMN phoneNumber TEXT DEFAULT ''");
+    }
   }
 
-  // جلب كل المرضى (للعرض في الواجهة الرئيسية)
+  Future<int> insertPatient(Patient patient) async {
+    Database db = await instance.database;
+    return await db.insert('patients', patient.toMap());
+  }
+
   Future<List<Patient>> getAllPatients() async {
-    final db = await instance.database;
-    final maps = await db.query('patients', orderBy: 'firstVisitDate DESC');
-
-    return maps.map((map) {
-      final id = map['id'] as String;
-      return Patient.fromMap(id, map);
-    }).toList();
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query('patients', orderBy: 'createdAt DESC');
+    return List.generate(maps.length, (i) => Patient.fromMap(maps[i]));
   }
 
-  // تحديث بيانات مريض
   Future<int> updatePatient(Patient patient) async {
-    final db = await instance.database;
-    return db.update(
-      'patients',
-      patient.toMap(),
-      where: 'id = ?',
-      whereArgs: [patient.id],
-    );
+    Database db = await instance.database;
+    return await db.update('patients', patient.toMap(), where: 'id = ?', whereArgs: [patient.id]);
   }
 
-  // حذف مريض
-  Future<int> deletePatient(String id) async {
-    final db = await instance.database;
-    return await db.delete(
-      'patients',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<int> deletePatient(int id) async {
+    Database db = await instance.database;
+    await db.delete('visits', where: 'patientId = ?', whereArgs: [id]); 
+    return await db.delete('patients', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ==========================================
-  //            عمليات الزيارات (Visits)
-  // ==========================================
-
-  // إضافة زيارة جديدة
-  Future<String> insertVisit(Visit visit) async {
-    final db = await instance.database;
-    final id = visit.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-    
-    final data = visit.toMap();
-    data['id'] = id;
-
-    await db.insert('visits', data, conflictAlgorithm: ConflictAlgorithm.replace);
-    return id;
+  Future<int> insertVisit(Visit visit) async {
+    Database db = await instance.database;
+    return await db.insert('visits', visit.toMap());
   }
 
-  // جلب زيارات مريض معين
-  Future<List<Visit>> getVisitsForPatient(String patientId) async {
-    final db = await instance.database;
-    final maps = await db.query(
-      'visits',
-      where: 'patientId = ?',
-      whereArgs: [patientId],
-      orderBy: 'visitDate DESC',
-    );
-
-    return maps.map((map) {
-      final id = map['id'] as String;
-      return Visit.fromMap(id, map);
-    }).toList();
+  Future<List<Visit>> getVisitsForPatient(int patientId) async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query('visits', where: 'patientId = ?', whereArgs: [patientId], orderBy: 'visitDate DESC');
+    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]));
   }
 
-  // تحديث زيارة
   Future<int> updateVisit(Visit visit) async {
-    final db = await instance.database;
-    return db.update(
-      'visits',
-      visit.toMap(),
-      where: 'id = ?',
-      whereArgs: [visit.id],
-    );
+    Database db = await instance.database;
+    return await db.update('visits', visit.toMap(), where: 'id = ?', whereArgs: [visit.id]);
   }
 
-  // حذف زيارة
-  Future<int> deleteVisit(String id) async {
-    final db = await instance.database;
-    return await db.delete(
-      'visits',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<int> deleteVisit(int id) async {
+    Database db = await instance.database;
+    return await db.delete('visits', where: 'id = ?', whereArgs: [id]);
   }
 }
