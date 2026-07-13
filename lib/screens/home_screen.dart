@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../services/database_helper.dart'; // قاعدة البيانات المحلية
+import 'package:sqflite/sqflite.dart'; // تمت إضافة هذه المكتبة هنا
+import '../services/database_helper.dart';
 import 'add_edit_patient_screen.dart';
 import 'reports_screen.dart';
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
-import 'package:sqflite/sqflite.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   
-  // دوال لجلب الإحصائيات من القاعدة المحلية
   Future<int> _getPatientsCount() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.rawQuery('SELECT COUNT(*) FROM patients');
@@ -29,15 +28,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  // دالة لتحديث الشاشة عند العودة
   void _refreshData() {
     setState(() {});
   }
 
   void _logout() {
-    // تم إلغاء تسجيل الخروج السحابي، يمكنك تحويل هذه الدالة لاحقاً لقفل التطبيق برمز PIN محلي
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) =>  LoginScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
@@ -274,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildQuickAction(
                         'Clinical Reports', 
                         Icons.analytics_rounded, 
-                        () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                        () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportsScreen())), // تم إزالة const من هنا
                       ),
                       _buildQuickAction(
                         'Settings', 
