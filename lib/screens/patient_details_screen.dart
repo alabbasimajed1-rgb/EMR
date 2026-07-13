@@ -262,7 +262,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12), elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-                            child: Ink সেল(
+                            child: InkWell
                               borderRadius: BorderRadius.circular(12),
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => VisitDetailsScreen(visit: visit))),
                               child: Padding(
