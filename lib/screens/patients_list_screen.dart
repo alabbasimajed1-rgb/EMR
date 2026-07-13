@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/patient.dart';
-import '../services/database_helper.dart'; // استدعاء قاعدة البيانات المحلية
-import 'add_edit_patient_screen.dart';
+import '../services/database_helper.dart';
 import 'patient_details_screen.dart';
+import 'add_edit_patient_screen.dart';
 
 class PatientsListScreen extends StatefulWidget {
   const PatientsListScreen({super.key});
@@ -12,90 +12,50 @@ class PatientsListScreen extends StatefulWidget {
 }
 
 class _PatientsListScreenState extends State<PatientsListScreen> {
+  late Future<List<Patient>> _patientsFuture;
   String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
-  
-  List<Patient> _patients = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPatients(); // جلب المرضى عند فتح الشاشة
+    _loadPatients();
   }
 
-  // دالة لجلب البيانات من الهاتف
-  Future<void> _loadPatients() async {
-    setState(() => _isLoading = true);
-    try {
-      final patientsData = await DatabaseHelper.instance.getAllPatients();
-      setState(() {
-        _patients = patientsData;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading patients: $e')),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  void _loadPatients() {
+    setState(() {
+      _patientsFuture = DatabaseHelper.instance.getAllPatients();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // تصفية المرضى بناءً على نص البحث
-    List<Patient> filteredPatients = _patients;
-    if (_searchQuery.isNotEmpty) {
-      filteredPatients = _patients.where((patient) {
-        return patient.fullName.toLowerCase().contains(_searchQuery);
-      }).toList();
-    }
-
     return Scaffold(
-      backgroundColor: Colors.grey.shade50, 
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('My Patients', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1E3A8A),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0, bottom: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.1),
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4), 
-                ),
-              ],
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
-              controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search patient by name...',
-                hintStyle: TextStyle(color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.grey),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.blue.shade50, width: 2),
+                ),
               ),
               onChanged: (value) {
                 setState(() {
@@ -104,111 +64,113 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
               },
             ),
           ),
-          
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _patients.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.folder_shared_outlined, size: 80, color: Colors.grey.shade400),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No patients recorded yet.',
-                              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
-                      )
-                    : filteredPatients.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.search_off, size: 60, color: Colors.grey.shade400),
-                                const SizedBox(height: 16),
-                                const Text('No patients match your search', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 80, top: 8), 
-                            itemCount: filteredPatients.length,
-                            itemBuilder: (context, index) {
-                              final patient = filteredPatients[index];
-                              return Card(
-                                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+            child: FutureBuilder<List<Patient>>(
+              future: _patientsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No patients found.',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                    ),
+                  );
+                }
+
+                final patients = snapshot.data!.where((p) {
+                  return p.fullName.toLowerCase().contains(_searchQuery);
+                }).toList();
+
+                if (patients.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No matching patients.',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: patients.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemBuilder: (context, index) {
+                    final patient = patients[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => PatientDetailsScreen(patient: patient)),
+                          );
+                          _loadPatients(); 
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Colors.blue.shade50,
+                                child: Text(
+                                  patient.fullName.isNotEmpty ? patient.fullName[0].toUpperCase() : '?',
+                                  style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold, fontSize: 18),
                                 ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  leading: CircleAvatar(
-                                    radius: 25,
-                                    backgroundColor: Colors.blue.shade50,
-                                    child: Text(
-                                      patient.fullName.isNotEmpty
-                                          ? patient.fullName[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                        color: Colors.blue.shade700,
-                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      patient.fullName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
                                     ),
-                                  ),
-                                  title: Text(
-                                    patient.fullName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      'Age: ${patient.age} | First Visit: ${patient.firstVisitDate.toString().substring(0, 10)}',
+                                    const SizedBox(height: 4),
+                                    // تم إصلاح الخطأ في هذا السطر
+                                    Text(
+                                      'Age: ${patient.age} | Added: ${patient.createdAt.toString().substring(0, 10)}',
                                       style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                                     ),
-                                  ),
-                                  trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.blue.shade300),
-                                  onTap: () async {
-                                    // انتظار العودة من تفاصيل المريض لتحديث القائمة إذا تم تعديله
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PatientDetailsScreen(patient: patient),
-                                      ),
-                                    );
-                                    _loadPatients(); 
-                                  },
+                                  ],
                                 ),
-                              );
-                            },
+                              ),
+                              Icon(Icons.chevron_right, color: Colors.blue.shade300),
+                            ],
                           ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
-      
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        elevation: 4,
         onPressed: () async {
-          // انتظار إضافة المريض الجديد، ثم تحديث القائمة
-          final result = await Navigator.push(
+          await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AddEditPatientScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AddEditPatientScreen()),
           );
-          
-          if (result == true) {
-            _loadPatients();
-          }
+          _loadPatients();
         },
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text("New Patient", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1E3A8A),
+        icon: const Icon(Icons.person_add, color: Colors.white),
+        label: const Text('New Patient', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
