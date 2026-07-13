@@ -58,7 +58,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
         visitMaps = await db.query('visits');
       }
 
-      List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map['id'] as String, map)).toList();
+      // تم إصلاح الخطأ البرمجي في هذا السطر
+      List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map['id'].toString(), map)).toList();
 
       if (_dateRange != null) {
         visits = visits.where((v) {
@@ -81,7 +82,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       visits.sort((a, b) => b.visitDate.compareTo(a.visitDate));
 
-      // جلب بيانات العيادة المحفوظة في الإعدادات
       final prefs = await SharedPreferences.getInstance();
       final doctorName = prefs.getString('doctor_name') ?? 'Clinic Doctor';
       final specialty = prefs.getString('doctor_specialty') ?? 'Medical Specialty';
@@ -257,134 +257,137 @@ class _ReportsScreenState extends State<ReportsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.analytics_outlined, size: 80, color: Colors.blue.shade200),
-              const SizedBox(height: 16),
-              const Text(
-                'Generate Clinical Reports',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Select a patient or a date range (or both) to export a comprehensive PDF report.',
-                style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: FutureBuilder<List<Patient>>(
-                    future: DatabaseHelper.instance.getAllPatients(),
-                    builder: (context, snapshot) {
-                      List<Patient> patients = snapshot.data ?? [];
-                      return DropdownButtonHideUnderline(
-                        child: DropdownButton<Patient?>(
-                          isExpanded: true,
-                          value: _selectedPatient,
-                          hint: Row(
-                            children: [
-                              Icon(Icons.groups, color: Colors.blue.shade700),
-                              const SizedBox(width: 16),
-                              const Text('All Patients (Global Report)', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ]
-                          ),
-                          items: [
-                            DropdownMenuItem<Patient?>(
-                              value: null,
-                              child: Row(
-                                children: [
-                                  Icon(Icons.groups, color: Colors.blue.shade700),
-                                  const SizedBox(width: 16),
-                                  const Text('All Patients (Global)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                ],
-                              ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.analytics_outlined, size: 80, color: Colors.blue.shade200),
+                const SizedBox(height: 16),
+                const Text(
+                  'Generate Clinical Reports',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Select a patient or a date range (or both) to export a comprehensive PDF report.',
+                  style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: FutureBuilder<List<Patient>>(
+                      future: DatabaseHelper.instance.getAllPatients(),
+                      builder: (context, snapshot) {
+                        List<Patient> patients = snapshot.data ?? [];
+                        return DropdownButtonHideUnderline(
+                          child: DropdownButton<Patient?>(
+                            isExpanded: true,
+                            value: _selectedPatient,
+                            hint: Row(
+                              children: [
+                                Icon(Icons.groups, color: Colors.blue.shade700),
+                                const SizedBox(width: 16),
+                                const Text('All Patients (Global Report)', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ]
                             ),
-                            ...patients.map((p) => DropdownMenuItem<Patient?>(
-                              value: p,
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.person, color: Colors.grey),
-                                  const SizedBox(width: 16),
-                                  Text(p.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                ],
+                            items: [
+                              DropdownMenuItem<Patient?>(
+                                value: null,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.groups, color: Colors.blue.shade700),
+                                    const SizedBox(width: 16),
+                                    const Text('All Patients (Global)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
                               ),
-                            )),
-                          ],
-                          onChanged: (val) {
-                            setState(() => _selectedPatient = val);
-                          },
-                        ),
-                      );
-                    }
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blue.shade50,
-                    child: Icon(Icons.calendar_month, color: Colors.blue.shade700),
-                  ),
-                  title: Text(
-                    _dateRange == null ? 'Select Date Range' : 'Selected Period',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    _dateRange == null 
-                        ? 'All Time' 
-                        : '${_dateRange!.start.toString().substring(0, 10)}  to  ${_dateRange!.end.toString().substring(0, 10)}',
-                    style: TextStyle(color: _dateRange == null ? Colors.grey : Colors.blue.shade800),
-                  ),
-                  trailing: _dateRange != null 
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.red),
-                          onPressed: () => setState(() => _dateRange = null),
-                        )
-                      : const Icon(Icons.edit, size: 20),
-                  onTap: _selectDateRange,
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton.icon(
-                  onPressed: _isGenerating ? null : _generatePdf,
-                  icon: _isGenerating 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.picture_as_pdf),
-                  label: Text(
-                    _isGenerating ? 'Generating...' : 'Generate & Share PDF',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                              ...patients.map((p) => DropdownMenuItem<Patient?>(
+                                value: p,
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.person, color: Colors.grey),
+                                    const SizedBox(width: 16),
+                                    Text(p.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              )),
+                            ],
+                            onChanged: (val) {
+                              setState(() => _selectedPatient = val);
+                            },
+                          ),
+                        );
+                      }
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue.shade50,
+                      child: Icon(Icons.calendar_month, color: Colors.blue.shade700),
+                    ),
+                    title: Text(
+                      _dateRange == null ? 'Select Date Range' : 'Selected Period',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      _dateRange == null 
+                          ? 'All Time' 
+                          : '${_dateRange!.start.toString().substring(0, 10)}  to  ${_dateRange!.end.toString().substring(0, 10)}',
+                      style: TextStyle(color: _dateRange == null ? Colors.grey : Colors.blue.shade800),
+                    ),
+                    trailing: _dateRange != null 
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.red),
+                            onPressed: () => setState(() => _dateRange = null),
+                          )
+                        : const Icon(Icons.edit, size: 20),
+                    onTap: _selectDateRange,
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton.icon(
+                    onPressed: _isGenerating ? null : _generatePdf,
+                    icon: _isGenerating 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Icon(Icons.picture_as_pdf),
+                    label: Text(
+                      _isGenerating ? 'Generating...' : 'Generate & Share PDF',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
