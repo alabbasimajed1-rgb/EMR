@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
           prefixIconColor: Colors.grey.shade500,
         ),
 
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 3,
           shadowColor: Colors.black.withOpacity(0.15), 
