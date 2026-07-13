@@ -15,7 +15,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController_phoneC();
   String _gender = 'Male';
   final TextEditingController _chiefComplaintController = TextEditingController();
   final TextEditingController _medicalHistoryController = TextEditingController();
@@ -39,6 +39,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
       _nameController.text = widget.patient!.fullName;
       _ageController.text = widget.patient!.age.toString();
       _gender = widget.patient!.gender;
+      _phoneController = TextEditingController(text: widget.patient?.phoneNumber ?? '');
       _chiefComplaintController.text = widget.patient!.chiefComplaint;
       _medicalHistoryController.text = widget.patient!.medicalHistory;
       _investigationsController.text = widget.patient!.investigationAndImaging;
@@ -139,6 +140,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
         fullName: _nameController.text.trim(),
         age: int.tryParse(_ageController.text.trim()) ?? 0,
         gender: _gender,
+        phoneNumber: _phoneController.text.trim(),
         firstVisitDate: widget.patient?.firstVisitDate ?? DateTime.now(), 
         chiefComplaint: _chiefComplaintController.text.trim(),
         medicalHistory: _medicalHistoryController.text.trim(),
@@ -176,6 +178,11 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
   }
 
   @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -218,6 +225,15 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               flex: 1,
+                              const SizedBox(height: 16),TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                              labelText: 'Phone Number (Optional)',
+                              prefixIcon: const Icon(Icons.phone_outlined),
+                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                             ),
+                           ),
                               child: DropdownButtonFormField<String>(
                                 value: _gender,
                                 decoration: const InputDecoration(labelText: 'Gender *', prefixIcon: Icon(Icons.wc_outlined)),
