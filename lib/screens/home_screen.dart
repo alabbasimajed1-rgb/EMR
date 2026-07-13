@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart'; // تمت إضافة هذه المكتبة هنا
+import 'package:sqflite/sqflite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/database_helper.dart';
 import 'add_edit_patient_screen.dart';
-import 'report_screen.dart';
+import 'report_screen.dart'; 
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
@@ -15,7 +16,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  
+  String _doctorName = 'Clinic Doctor';
+  String _doctorSpecialty = 'Medical Specialty';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  // دالة سحب بيانات الطبيب من الإعدادات
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _doctorName = prefs.getString('doctor_name') ?? 'Clinic Doctor';
+        _doctorSpecialty = prefs.getString('doctor_specialty') ?? 'Medical Specialty';
+      });
+    }
+  }
+
   Future<int> _getPatientsCount() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.rawQuery('SELECT COUNT(*) FROM patients');
@@ -29,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshData() {
+    _loadProfile(); // تحديث الاسم فوراً بعد العودة من الإعدادات
     setState(() {});
   }
 
@@ -49,11 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.15),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
+              BoxShadow(color: color.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 8)),
             ],
           ),
           child: Column(
@@ -61,30 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
                 child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(height: 16),
-              Text(
-                count,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
+              Text(count, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
               const SizedBox(height: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade500,
-                ),
-              ),
+              Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
             ],
           ),
         ),
@@ -108,19 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon, 
-              size: 32, 
-              color: isPrimary ? Colors.white : const Color(0xFF1E3A8A)
-            ),
+            Icon(icon, size: 32, color: isPrimary ? Colors.white : const Color(0xFF1E3A8A)),
             const SizedBox(height: 12),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: isPrimary ? Colors.white : const Color(0xFF1E293B),
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isPrimary ? Colors.white : const Color(0xFF1E293B)),
             ),
           ],
         ),
@@ -147,10 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 60, 24, 80),
                   decoration: const BoxDecoration(
                     color: Color(0xFF1E3A8A),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
-                    ),
+                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(40), bottomRight: Radius.circular(40)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,25 +147,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                dateString,
-                                style: TextStyle(color: Colors.blue.shade200, fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Dr. Majed Abbas',
-                                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Consultant Anesthesia & Intensive Care',
-                                style: TextStyle(color: Colors.blue.shade100, fontSize: 13),
-                              ),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(dateString, style: TextStyle(color: Colors.blue.shade200, fontSize: 13, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _doctorName, // يتم جلب الاسم هنا ديناميكياً
+                                  style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _doctorSpecialty, // يتم جلب التخصص هنا ديناميكياً
+                                  style: TextStyle(color: Colors.blue.shade100, fontSize: 13),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 10),
                           Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -185,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: IconButton(
                               icon: const Icon(Icons.lock_outline, color: Colors.white, size: 22),
                               onPressed: _logout,
-                              tooltip: 'Lock App',
+                              tooltip: 'Secure Clinic', // تم تعديل الوصف هنا
                             ),
                           ),
                         ],
@@ -240,14 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Quick Actions',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.blue.shade900,
-                    ),
-                  ),
+                  Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
                   const SizedBox(height: 16),
                   GridView.count(
                     crossAxisCount: 2,
@@ -271,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildQuickAction(
                         'Clinical Reports', 
                         Icons.analytics_rounded, 
-                        () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportsScreen())), // تم إزالة const من هنا
+                        () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportsScreen())), 
                       ),
                       _buildQuickAction(
                         'Settings', 
