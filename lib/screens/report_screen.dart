@@ -58,8 +58,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
         visitMaps = await db.query('visits');
       }
 
-      // تم إصلاح الخطأ البرمجي في هذا السطر
-      List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map['id'].toString(), map)).toList();
+      // القراءة النظيفة والمباشرة للملف
+      List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map)).toList();
 
       if (_dateRange != null) {
         visits = visits.where((v) {
