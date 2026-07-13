@@ -5,7 +5,7 @@ import '../models/visit.dart';
 
 class DatabaseHelper {
   static const _databaseName = "emr_database.db";
-  static const _databaseVersion = 3; 
+  static const _databaseVersion = 4; // تم رفع الإصدار لـ 4
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -50,6 +50,16 @@ class DatabaseHelper {
         FOREIGN KEY (visitId) REFERENCES visits (id) ON DELETE CASCADE
       )
     ''');
+
+    // الجدول الجديد لصور المريض الأساسية
+    await db.execute('''
+      CREATE TABLE patient_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patientId INTEGER NOT NULL,
+        imagePath TEXT NOT NULL,
+        FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -66,8 +76,19 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE patient_images (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          patientId INTEGER NOT NULL,
+          imagePath TEXT NOT NULL,
+          FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+        )
+      ''');
+    }
   }
 
+  // --- دوال الصور ---
   Future<int> insertImage(int visitId, String path) async {
     Database db = await instance.database;
     return await db.insert('visit_images', {'visitId': visitId, 'imagePath': path});
@@ -79,6 +100,19 @@ class DatabaseHelper {
     return maps.map((m) => m['imagePath'] as String).toList();
   }
 
+  // دوال صور المريض
+  Future<int> insertPatientImage(int patientId, String path) async {
+    Database db = await instance.database;
+    return await db.insert('patient_images', {'patientId': patientId, 'imagePath': path});
+  }
+
+  Future<List<String>> getImagesForPatient(int patientId) async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query('patient_images', where: 'patientId = ?', whereArgs: [patientId]);
+    return maps.map((m) => m['imagePath'] as String).toList();
+  }
+
+  // --- دوال المرضى والزيارات ---
   Future<int> insertPatient(Patient patient) async {
     Database db = await instance.database;
     return await db.insert('patients', patient.toMap());
@@ -97,6 +131,7 @@ class DatabaseHelper {
 
   Future<int> deletePatient(int id) async {
     Database db = await instance.database;
+    await db.delete('patient_images', where: 'patientId = ?', whereArgs: [id]);
     await db.delete('visits', where: 'patientId = ?', whereArgs: [id]); 
     return await db.delete('patients', where: 'id = ?', whereArgs: [id]);
   }
