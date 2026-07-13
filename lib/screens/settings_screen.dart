@@ -10,191 +10,148 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _drNameController = TextEditingController();
-  final _specialtyController = TextEditingController();
-  bool _isLoadingBackup = false;
+  final _nameController = TextEditingController(text: 'Dr. Majed Abbas');
+  final _specialtyController = TextEditingController(text: 'Consultant Anesthesia & Intensive Care');
 
   @override
-  void initState() {
-    super.initState();
-    _loadClinicData();
+  void dispose() {
+    _nameController.dispose();
+    _specialtyController.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadClinicData() async {
+  void _saveProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _drNameController.text = prefs.getString('dr_name') ?? 'Dr. Majed Abbas';
-      _specialtyController.text = prefs.getString('specialty') ?? 'Consultant Anesthesia & Intensive Care';
-    });
-  }
-
-  Future<void> _saveClinicData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('dr_name', _drNameController.text);
-    await prefs.setString('specialty', _specialtyController.text);
+    await prefs.setString('doctor_name', _nameController.text);
+    await prefs.setString('doctor_specialty', _specialtyController.text);
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Clinic Profile Saved Successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
-  // محاكاة عملية النسخ الاحتياطي - سيتم برمجتها لتعمل مع Google Drive في الخطوة القادمة
-  Future<void> _runBackup() async {
-    setState(() => _isLoadingBackup = true);
-    await Future.delayed(const Duration(seconds: 2)); 
-    setState(() => _isLoadingBackup = false);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Text('Data backed up to cloud securely! (Simulated)'),
-            ],
-          ),
-          backgroundColor: Colors.blue.shade700,
-        ),
+        const SnackBar(content: Text('Profile saved successfully!'), backgroundColor: Colors.green),
       );
     }
   }
 
   void _logout() {
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false, 
-      );
-    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Settings & Profile'),
-        backgroundColor: Colors.blue.shade700,
+        title: const Text('Settings & Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
-        elevation: 0,
+        centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 8, bottom: 8),
-            child: Text('ACCOUNT', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-          ),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.blue.shade100,
-                child: const Icon(Icons.security, color: Colors.blue),
-              ),
-              title: const Text('Local Storage Status'),
-              subtitle: Text('Secured & Offline', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          const Padding(
-            padding: EdgeInsets.only(left: 8, bottom: 8),
-            child: Text('CLINIC PROFILE (PDF HEADER)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-          ),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('ACCOUNT', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: Row(
                 children: [
-                  TextField(
-                    controller: _drNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Doctor Name',
-                      prefixIcon: Icon(Icons.badge),
-                      border: OutlineInputBorder(),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
+                    child: Icon(Icons.security, color: Colors.blue.shade700),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Local Storage Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        SizedBox(height: 4),
+                        Text('Secured & Offline', style: TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w600)),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _specialtyController,
-                    decoration: const InputDecoration(
-                      labelText: 'Specialty',
-                      prefixIcon: Icon(Icons.local_hospital),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _saveClinicData,
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Profile'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade50,
-                        foregroundColor: Colors.blue.shade700,
-                      ),
-                    ),
-                  )
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-          const Padding(
-            padding: EdgeInsets.only(left: 8, bottom: 8),
-            child: Text('DATA MANAGEMENT', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-          ),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud_upload, color: Colors.green),
-                  title: const Text('Backup Database'),
-                  subtitle: const Text('Save a secure copy to Drive'),
-                  trailing: _isLoadingBackup 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: _isLoadingBackup ? null : _runBackup,
-                ),
-                const Divider(height: 0),
-                ListTile(
-                  leading: const Icon(Icons.language, color: Colors.blue),
-                  title: const Text('App Language'),
-                  trailing: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: _logout,
-              icon: const Icon(Icons.lock),
-              label: const Text('Lock App', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade50,
-                foregroundColor: Colors.red,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const Text('CLINIC PROFILE (PDF HEADER)', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(labelText: 'Doctor Name', prefixIcon: const Icon(Icons.badge_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _specialtyController,
+                    decoration: InputDecoration(labelText: 'Specialty', prefixIcon: const Icon(Icons.local_hospital_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _saveProfile,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade50, foregroundColor: Colors.blue.shade800, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 32),
+
+            const Text('DATA MANAGEMENT', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.cloud_upload, color: Color(0xFF0F766E)),
+                    title: const Text('Backup Database', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Save a secure copy to Drive'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {},
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.language, color: Colors.blue),
+                    title: const Text('App Language', style: TextStyle(fontWeight: FontWeight.w600)),
+                    trailing: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: _logout,
+                icon: const Icon(Icons.lock_outline),
+                label: const Text('Secure', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, foregroundColor: Colors.red.shade700, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
