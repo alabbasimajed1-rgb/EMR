@@ -28,11 +28,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue.shade700, 
-              onPrimary: Colors.white, 
-              onSurface: Colors.black, 
-            ),
+            colorScheme: ColorScheme.light(primary: Colors.blue.shade700, onPrimary: Colors.white, onSurface: Colors.black),
           ),
           child: child!,
         );
@@ -44,9 +40,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _generatePdf() async {
-    setState(() {
-      _isGenerating = true;
-    });
+    setState(() => _isGenerating = true);
 
     try {
       final db = await DatabaseHelper.instance.database;
@@ -58,7 +52,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         visitMaps = await db.query('visits');
       }
 
-      // القراءة النظيفة والمباشرة للملف
       List<Visit> visits = visitMaps.map((map) => Visit.fromMap(map)).toList();
 
       if (_dateRange != null) {
@@ -68,15 +61,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }).toList();
       }
 
-      if (visits.isEmpty) {
+      // تم التعديل هنا: إذا لم يكن هناك مريض محدد ولم تكن هناك زيارات، نوقف التقرير.
+      // أما إذا كان هناك مريض محدد، نسمح بالطباعة حتى لو لم تكن هناك زيارات.
+      if (visits.isEmpty && _selectedPatient == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No records found for the selected criteria.')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No records found for the selected criteria.')));
         }
-        setState(() {
-          _isGenerating = false;
-        });
+        setState(() => _isGenerating = false);
         return;
       }
 
@@ -89,12 +80,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final arabicFont = await PdfGoogleFonts.cairoRegular();
       final arabicFontBold = await PdfGoogleFonts.cairoBold();
 
-      final pdf = pw.Document(
-        theme: pw.ThemeData.withFont(
-          base: arabicFont,
-          bold: arabicFontBold,
-        ),
-      );
+      final pdf = pw.Document(theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold));
       
       pdf.addPage(
         pw.MultiPage(
@@ -135,8 +121,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+                  color: PdfColors.grey100, border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
                   borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
                 ),
                 child: pw.Row(
@@ -150,36 +135,67 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
               pw.SizedBox(height: 20),
 
-              pw.Text('CLINICAL SUMMARY', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text('CLINICAL ASSESSMENT', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
               pw.Divider(color: PdfColors.blue800, thickness: 1),
               pw.SizedBox(height: 10),
 
-              pw.Text('Chief Complaint:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
-              pw.SizedBox(height: 2),
-              pw.Text(_selectedPatient!.chiefComplaint, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
-              pw.SizedBox(height: 12),
+              if (_selectedPatient!.chiefComplaint.isNotEmpty) ...[
+                pw.Text('Chief Complaint:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.chiefComplaint, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 12),
+              ],
 
-              pw.Text('Medical History (Clinical Data):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
-              pw.SizedBox(height: 2),
-              pw.Text(_selectedPatient!.medicalHistory, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
-              pw.SizedBox(height: 24),
+              if (_selectedPatient!.medicalHistory.isNotEmpty) ...[
+                pw.Text('Medical History (Clinical Data):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.medicalHistory, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 12),
+              ],
 
+              if (_selectedPatient!.investigationAndImaging.isNotEmpty) ...[
+                pw.Text('Investigations & Imaging:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.investigationAndImaging, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 12),
+              ],
+              
+              if (_selectedPatient!.differentialDiagnosis.isNotEmpty) ...[
+                pw.Text('Differential Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.differentialDiagnosis, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 12),
+              ],
+
+              if (_selectedPatient!.finalDiagnosis.isNotEmpty) ...[
+                pw.Text('Final Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.finalDiagnosis, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 12),
+              ],
+
+              if (_selectedPatient!.firstTreatmentPlan.isNotEmpty) ...[
+                pw.Text('Initial Treatment Plan:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
+                pw.SizedBox(height: 2),
+                pw.Text(_selectedPatient!.firstTreatmentPlan, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.SizedBox(height: 24),
+              ],
+            ],
+
+            if (visits.isNotEmpty) ...[
               pw.Text('VISIT RECORDS', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
               pw.Divider(color: PdfColors.blue800, thickness: 1),
               pw.SizedBox(height: 10),
+            ] else if (_selectedPatient != null) ...[
+              pw.SizedBox(height: 20),
+              pw.Center(child: pw.Text('No follow-up visits recorded yet.', style: pw.TextStyle(color: PdfColors.grey600, fontStyle: pw.FontStyle.italic))),
             ],
 
             if (_dateRange != null && _selectedPatient == null) ...[
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey200,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
-                ),
-                child: pw.Text(
-                  'Period: ${_dateRange!.start.toString().substring(0, 10)}  TO  ${_dateRange!.end.toString().substring(0, 10)}',
-                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-                ),
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200, borderRadius: pw.BorderRadius.all(pw.Radius.circular(5))),
+                child: pw.Text('Period: ${_dateRange!.start.toString().substring(0, 10)}  TO  ${_dateRange!.end.toString().substring(0, 10)}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
               ),
               pw.SizedBox(height: 20),
             ],
@@ -187,10 +203,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ...visits.map((v) => pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 12),
                   padding: const pw.EdgeInsets.all(12),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                  ),
+                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300, width: 0.5), borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8))),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
@@ -226,24 +239,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
 
       final output = await getTemporaryDirectory();
-      String fileName = _selectedPatient != null 
-          ? 'Report_${_selectedPatient!.fullName.replaceAll(' ', '_')}.pdf'
-          : 'Clinical_Report.pdf';
-          
+      String fileName = _selectedPatient != null ? 'Report_${_selectedPatient!.fullName.replaceAll(' ', '_')}.pdf' : 'Clinical_Report.pdf';
       final file = File('${output.path}/$fileName');
       await file.writeAsBytes(await pdf.save());
       await Printing.sharePdf(bytes: await pdf.save(), filename: fileName);
       
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating report: $e')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() {
-        _isGenerating = false;
-      });
+      setState(() => _isGenerating = false);
     }
   }
 
@@ -251,12 +255,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Reports & Analytics'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Reports & Analytics'), backgroundColor: Colors.blue.shade700, foregroundColor: Colors.white, elevation: 0),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -266,22 +265,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 Icon(Icons.analytics_outlined, size: 80, color: Colors.blue.shade200),
                 const SizedBox(height: 16),
-                const Text(
-                  'Generate Clinical Reports',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
+                const Text('Generate Clinical Reports', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(
-                  'Select a patient or a date range (or both) to export a comprehensive PDF report.',
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
-                  textAlign: TextAlign.center,
-                ),
+                Text('Select a patient or a date range (or both) to export a comprehensive PDF report.', style: TextStyle(fontSize: 15, color: Colors.grey.shade600), textAlign: TextAlign.center),
                 const SizedBox(height: 32),
                 
                 Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: FutureBuilder<List<Patient>>(
@@ -290,40 +280,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         List<Patient> patients = snapshot.data ?? [];
                         return DropdownButtonHideUnderline(
                           child: DropdownButton<Patient?>(
-                            isExpanded: true,
-                            value: _selectedPatient,
-                            hint: Row(
-                              children: [
-                                Icon(Icons.groups, color: Colors.blue.shade700),
-                                const SizedBox(width: 16),
-                                const Text('All Patients (Global Report)', style: TextStyle(fontWeight: FontWeight.bold)),
-                              ]
-                            ),
+                            isExpanded: true, value: _selectedPatient,
+                            hint: Row(children: [Icon(Icons.groups, color: Colors.blue.shade700), const SizedBox(width: 16), const Text('All Patients (Global Report)', style: TextStyle(fontWeight: FontWeight.bold))]),
                             items: [
-                              DropdownMenuItem<Patient?>(
-                                value: null,
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.groups, color: Colors.blue.shade700),
-                                    const SizedBox(width: 16),
-                                    const Text('All Patients (Global)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                              ...patients.map((p) => DropdownMenuItem<Patient?>(
-                                value: p,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.person, color: Colors.grey),
-                                    const SizedBox(width: 16),
-                                    Text(p.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              )),
+                              DropdownMenuItem<Patient?>(value: null, child: Row(children: [Icon(Icons.groups, color: Colors.blue.shade700), const SizedBox(width: 16), const Text('All Patients (Global)', style: TextStyle(fontWeight: FontWeight.bold))])),
+                              ...patients.map((p) => DropdownMenuItem<Patient?>(value: p, child: Row(children: [const Icon(Icons.person, color: Colors.grey), const SizedBox(width: 16), Text(p.fullName, style: const TextStyle(fontWeight: FontWeight.bold))]))),
                             ],
-                            onChanged: (val) {
-                              setState(() => _selectedPatient = val);
-                            },
+                            onChanged: (val) => setState(() => _selectedPatient = val),
                           ),
                         );
                       }
@@ -333,56 +296,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 const SizedBox(height: 16),
 
                 Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blue.shade50,
-                      child: Icon(Icons.calendar_month, color: Colors.blue.shade700),
-                    ),
-                    title: Text(
-                      _dateRange == null ? 'Select Date Range' : 'Selected Period',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      _dateRange == null 
-                          ? 'All Time' 
-                          : '${_dateRange!.start.toString().substring(0, 10)}  to  ${_dateRange!.end.toString().substring(0, 10)}',
-                      style: TextStyle(color: _dateRange == null ? Colors.grey : Colors.blue.shade800),
-                    ),
-                    trailing: _dateRange != null 
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.red),
-                            onPressed: () => setState(() => _dateRange = null),
-                          )
-                        : const Icon(Icons.edit, size: 20),
+                    leading: CircleAvatar(backgroundColor: Colors.blue.shade50, child: Icon(Icons.calendar_month, color: Colors.blue.shade700)),
+                    title: Text(_dateRange == null ? 'Select Date Range' : 'Selected Period', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(_dateRange == null ? 'All Time' : '${_dateRange!.start.toString().substring(0, 10)}  to  ${_dateRange!.end.toString().substring(0, 10)}', style: TextStyle(color: _dateRange == null ? Colors.grey : Colors.blue.shade800)),
+                    trailing: _dateRange != null ? IconButton(icon: const Icon(Icons.clear, color: Colors.red), onPressed: () => setState(() => _dateRange = null)) : const Icon(Icons.edit, size: 20),
                     onTap: _selectDateRange,
                   ),
                 ),
-                
                 const SizedBox(height: 32),
-                
                 SizedBox(
-                  width: double.infinity,
-                  height: 55,
+                  width: double.infinity, height: 55,
                   child: ElevatedButton.icon(
                     onPressed: _isGenerating ? null : _generatePdf,
-                    icon: _isGenerating 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Icon(Icons.picture_as_pdf),
-                    label: Text(
-                      _isGenerating ? 'Generating...' : 'Generate & Share PDF',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    icon: _isGenerating ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.picture_as_pdf),
+                    label: Text(_isGenerating ? 'Generating...' : 'Generate & Share PDF', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   ),
                 ),
                 const SizedBox(height: 20),
