@@ -1,31 +1,46 @@
 class Visit {
   final String? id;
   final String patientId;
-  final String procedure;
   final DateTime visitDate;
+  final String procedure;
+  final String investigations; // فحوصات وأشعة الزيارة الجديدة
+  final String treatments; // علاجات الزيارة
+  final String advices; // النصائح (مثل إيقاف علاج معين)
+  final DateTime? nextVisitDate; // موعد الزيارة القادمة (اختياري)
 
   Visit({
     this.id,
     required this.patientId,
-    required this.procedure,
     required this.visitDate,
+    required this.procedure,
+    required this.investigations,
+    required this.treatments,
+    required this.advices,
+    this.nextVisitDate,
   });
 
-  factory Visit.fromMap(Map<String, dynamic> map) {
-    return Visit(
-      id: map['id']?.toString(),
-      patientId: map['patientId'] ?? '',
-      procedure: map['procedure'] ?? '',
-      visitDate: DateTime.tryParse(map['visitDate'] ?? '') ?? DateTime.now(),
-    );
-  }
+  Map<String, dynamic> toMap() => {
+        'patientId': patientId,
+        'visitDate': visitDate.toIso8601String(),
+        'procedure': procedure,
+        'investigations': investigations,
+        'treatments': treatments,
+        'advices': advices,
+        'nextVisitDate': nextVisitDate?.toIso8601String(), // قد يكون فارغاً
+      };
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'patientId': patientId,
-      'procedure': procedure,
-      'visitDate': visitDate.toIso8601String(),
-    };
-  }
+  factory Visit.fromMap(String id, Map<String, dynamic> map) => Visit(
+        id: id,
+        patientId: map['patientId'] ?? '',
+        visitDate: map['visitDate'] != null
+            ? DateTime.parse(map['visitDate'])
+            : DateTime.now(),
+        procedure: map['procedure'] ?? '',
+        investigations: map['investigations'] ?? '',
+        treatments: map['treatments'] ?? '',
+        advices: map['advices'] ?? '',
+        nextVisitDate: map['nextVisitDate'] != null
+            ? DateTime.parse(map['nextVisitDate'])
+            : null,
+      );
 }
