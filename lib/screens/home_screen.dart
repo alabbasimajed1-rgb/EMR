@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart'; // تمت إضافة هذه المكتبة هنا
 import '../services/database_helper.dart';
 import 'add_edit_patient_screen.dart';
-import 'reports_screen.dart';
+import 'report_screen.dart';
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
