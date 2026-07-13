@@ -4,7 +4,7 @@ import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import 'add_edit_patient_screen.dart';
 import 'new_visit_screen.dart';
-import 'visits_details_screen.dart'; 
+import 'visit_details_screen.dart'; // تأكد أن اسم ملف تفاصيل الزيارة عندك بهذا الشكل
 
 class PatientDetailsScreen extends StatefulWidget {
   final Patient patient;
@@ -56,17 +56,17 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   }
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    // إذا كانت كل الحقول بداخل هذا القسم فارغة، لا تقم برسم القسم أبداً
+    bool hasContent = children.any((child) => child is! SizedBox);
+    if (!hasContent) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Padding(
@@ -129,6 +129,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // بطاقة بيانات المريض العلوية
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
@@ -185,6 +186,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 1. التقييم السريري والتاريخ المرضي
                   _buildSectionCard(
                     title: 'Clinical Assessment',
                     icon: Icons.assignment_ind_outlined,
@@ -194,35 +196,35 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     ],
                   ),
 
-                  if (_patient.investigationAndImaging.isNotEmpty || _patient.differentialDiagnosis.isNotEmpty || _patient.finalDiagnosis.isNotEmpty)
-                    _buildSectionCard(
-                      title: 'Diagnostics & Investigations',
-                      icon: Icons.biotech_outlined,
-                      children: [
-                        _buildDataField('Investigations & Imaging', _patient.investigationAndImaging),
-                        _buildDataField('Differential Diagnosis', _patient.differentialDiagnosis),
-                        _buildDataField('Final Diagnosis', _patient.finalDiagnosis),
-                      ],
-                    ),
+                  // 2. الفحوصات والتشخيص
+                  _buildSectionCard(
+                    title: 'Diagnostics & Investigations',
+                    icon: Icons.biotech_outlined,
+                    children: [
+                      _buildDataField('Investigations & Imaging', _patient.investigationAndImaging),
+                      _buildDataField('Differential Diagnosis', _patient.differentialDiagnosis),
+                      _buildDataField('Final Diagnosis', _patient.finalDiagnosis),
+                    ],
+                  ),
 
-                  if (_patient.firstTreatmentPlan.isNotEmpty)
-                    _buildSectionCard(
-                      title: 'Management Plan',
-                      icon: Icons.medical_services_outlined,
-                      children: [
-                        _buildDataField('Initial Treatment', _patient.firstTreatmentPlan),
-                      ],
-                    ),
+                  // 3. الخطة العلاجية
+                  _buildSectionCard(
+                    title: 'Management Plan',
+                    icon: Icons.medical_services_outlined,
+                    children: [
+                      _buildDataField('Initial Treatment', _patient.firstTreatmentPlan),
+                    ],
+                  ),
 
                   const SizedBox(height: 16),
 
+                  // قسم الزيارات
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Clinical Visits', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
                       ElevatedButton.icon(
                         onPressed: () async {
-                          // تم حل مشكلة نوع البيانات هنا (String بدل int)
                           await Navigator.push(context, MaterialPageRoute(builder: (context) => NewVisitScreen(patientId: _patient.id!.toString())));
                           setState(() => _loadVisits());
                         },
@@ -260,41 +262,95 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                         itemCount: visits.length,
                         itemBuilder: (context, index) {
                           final visit = visits[index];
-                          // تم إصلاح مشكلة الأقواس وزر InkWell هنا
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 12), 
+                            margin: const EdgeInsets.only(bottom: 16), 
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => VisitDetailsScreen(visit: visit))),
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () async {
+                                await Navigator.push(context, MaterialPageRoute(builder: (context) => VisitDetailsScreen(visit: visit)));
+                                setState(() => _loadVisits());
+                              },
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: const Color(0xFF0F766E).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                      child: const Icon(Icons.monitor_heart_outlined, color: Color(0xFF0F766E)),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(visit.procedure, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
-                                          const SizedBox(height: 6),
-                                          Row(
+                                    // ترويسة الزيارة
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(color: const Color(0xFF0F766E).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                          child: const Icon(Icons.monitor_heart_outlined, color: Color(0xFF0F766E)),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Icon(Icons.calendar_month, size: 14, color: Colors.grey.shade500),
-                                              const SizedBox(width: 4),
-                                              Text(visit.visitDate.toString().substring(0, 10), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                              Text(visit.procedure, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.calendar_month, size: 14, color: Colors.grey.shade500),
+                                                  const SizedBox(width: 4),
+                                                  Text(visit.visitDate.toString().substring(0, 10), style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500)),
+                                                ],
+                                              ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+                                      ],
                                     ),
-                                    Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+                                    
+                                    // عرض تفاصيل الزيارة بالأسفل مباشرة
+                                    if (visit.investigations.isNotEmpty || visit.treatments.isNotEmpty || visit.advices.isNotEmpty) ...[
+                                      const SizedBox(height: 16),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 12),
+                                      
+                                      if (visit.investigations.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(Icons.science, size: 16, color: Colors.blue.shade600),
+                                              const SizedBox(width: 8),
+                                              Expanded(child: Text('Investigations: ${visit.investigations}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700))),
+                                            ],
+                                          ),
+                                        ),
+
+                                      if (visit.treatments.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(Icons.medication, size: 16, color: Colors.red.shade400),
+                                              const SizedBox(width: 8),
+                                              Expanded(child: Text('Treatments: ${visit.treatments}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700))),
+                                            ],
+                                          ),
+                                        ),
+
+                                      if (visit.advices.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 4.0),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(Icons.info_outline, size: 16, color: Colors.orange.shade600),
+                                              const SizedBox(width: 8),
+                                              Expanded(child: Text('Advices: ${visit.advices}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700))),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
                                   ],
                                 ),
                               ),
