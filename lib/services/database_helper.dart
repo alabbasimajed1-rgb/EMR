@@ -5,11 +5,10 @@ import '../models/visit.dart';
 
 class DatabaseHelper {
   static const _databaseName = "emr_database.db";
-  static const _databaseVersion = 2; 
+  static const _databaseVersion = 3; 
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
-
   static Database? _database;
 
   Future<Database> get database async {
@@ -20,43 +19,35 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), _databaseName);
-    return await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+    return await openDatabase(path, version: _databaseVersion, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE patients (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        fullName TEXT NOT NULL,
-        age INTEGER NOT NULL,
-        gender TEXT NOT NULL,
-        phoneNumber TEXT DEFAULT '',
-        chiefComplaint TEXT,
-        medicalHistory TEXT,
-        investigationAndImaging TEXT,
-        differentialDiagnosis TEXT,
-        finalDiagnosis TEXT,
-        firstTreatmentPlan TEXT,
-        createdAt TEXT NOT NULL
+        fullName TEXT NOT NULL, age INTEGER NOT NULL, gender TEXT NOT NULL,
+        phoneNumber TEXT DEFAULT '', chiefComplaint TEXT, medicalHistory TEXT,
+        investigationAndImaging TEXT, differentialDiagnosis TEXT, finalDiagnosis TEXT,
+        firstTreatmentPlan TEXT, createdAt TEXT NOT NULL
       )
     ''');
 
     await db.execute('''
       CREATE TABLE visits (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patientId INTEGER NOT NULL,
-        visitDate TEXT NOT NULL,
-        procedure TEXT NOT NULL,
-        investigations TEXT NOT NULL,
-        treatments TEXT NOT NULL,
-        advices TEXT NOT NULL,
-        nextVisitDate TEXT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT, patientId INTEGER NOT NULL,
+        visitDate TEXT NOT NULL, procedure TEXT NOT NULL, investigations TEXT NOT NULL,
+        treatments TEXT NOT NULL, advices TEXT NOT NULL, nextVisitDate TEXT,
         FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+      )
+    ''');
+    
+    await db.execute('''
+      CREATE TABLE visit_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        visitId INTEGER NOT NULL,
+        imagePath TEXT NOT NULL,
+        FOREIGN KEY (visitId) REFERENCES visits (id) ON DELETE CASCADE
       )
     ''');
   }
@@ -65,6 +56,27 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute("ALTER TABLE patients ADD COLUMN phoneNumber TEXT DEFAULT ''");
     }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE visit_images (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          visitId INTEGER NOT NULL,
+          imagePath TEXT NOT NULL,
+          FOREIGN KEY (visitId) REFERENCES visits (id) ON DELETE CASCADE
+        )
+      ''');
+    }
+  }
+
+  Future<int> insertImage(int visitId, String path) async {
+    Database db = await instance.database;
+    return await db.insert('visit_images', {'visitId': visitId, 'imagePath': path});
+  }
+
+  Future<List<String>> getImagesForVisit(int visitId) async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query('visit_images', where: 'visitId = ?', whereArgs: [visitId]);
+    return maps.map((m) => m['imagePath'] as String).toList();
   }
 
   Future<int> insertPatient(Patient patient) async {
@@ -97,8 +109,7 @@ class DatabaseHelper {
   Future<List<Visit>> getVisitsForPatient(int patientId) async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query('visits', where: 'patientId = ?', whereArgs: [patientId], orderBy: 'visitDate DESC');
-    // تم إصلاح الخطأ في هذا السطر
-    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]['id'].toString(), maps[i]));
+    return List.generate(maps.length, (i) => Visit.fromMap(maps[i]));
   }
 
   Future<int> updateVisit(Visit visit) async {
