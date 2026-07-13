@@ -5,6 +5,7 @@ import 'reports_screen.dart';
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
+import 'package:sqflite/sqflite.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _logout() {
     // تم إلغاء تسجيل الخروج السحابي، يمكنك تحويل هذه الدالة لاحقاً لقفل التطبيق برمز PIN محلي
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(builder: (context) =>  LoginScreen()),
     );
   }
 
