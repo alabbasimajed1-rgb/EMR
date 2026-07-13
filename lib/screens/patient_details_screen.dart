@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/patient.dart';
 import '../models/visit.dart';
-import '../services/database_helper.dart'; // استدعاء قاعدة البيانات المحلية
+import '../services/database_helper.dart'; 
 import 'add_edit_patient_screen.dart';
 import 'new_visit_screen.dart';
-import 'visit_details_screen.dart'; // سنقوم بتعديله لاحقاً إذا لزم الأمر
+import 'visits_details_screen.dart'; // تم تعديل الاستدعاء ليتطابق مع اسم الملف الخاص بك
 
 class PatientDetailsScreen extends StatefulWidget {
   final Patient patient;
@@ -23,7 +23,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   void initState() {
     super.initState();
     _patient = widget.patient;
-    _loadVisits(); // جلب الزيارات عند فتح الشاشة
+    _loadVisits(); 
   }
 
   void _loadVisits() {
@@ -43,7 +43,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
     }
   }
 
-  // تحديث بيانات المريض محلياً بعد التعديل
   void _refreshPatient() async {
     try {
       final patients = await DatabaseHelper.instance.getAllPatients();
@@ -53,9 +52,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
           _patient = updatedPatient;
         });
       }
-    } catch (e) {
-      // تجاهل الخطأ في حالة عدم العثور
-    }
+    } catch (e) {}
   }
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
@@ -265,7 +262,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       ),
                       ElevatedButton.icon(
                         onPressed: () async {
-                          // انتظار العودة من شاشة الزيارة ثم تحديث القائمة
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -290,7 +286,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // استخدام FutureBuilder بدلاً من StreamBuilder
                   FutureBuilder<List<Visit>>(
                     future: _visitsFuture,
                     builder: (context, snapshot) {
@@ -342,7 +337,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => VisitDetailsScreen(visit: visit),
+                                    builder: (context) => VisitDetailsScreen(visit: visit), // الاستدعاء الصحيح
                                   ),
                                 );
                               },
