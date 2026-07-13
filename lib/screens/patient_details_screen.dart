@@ -4,7 +4,7 @@ import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import 'add_edit_patient_screen.dart';
 import 'new_visit_screen.dart';
-import 'visits_details_screen.dart'; // تم تعديل الاستدعاء ليتطابق مع اسم الملف الخاص بك
+import 'visits_details_screen.dart'; 
 
 class PatientDetailsScreen extends StatefulWidget {
   final Patient patient;
@@ -78,22 +78,11 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
                   child: Icon(icon, size: 20, color: Colors.blue.shade800),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.blue.shade900,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
               ],
             ),
             const SizedBox(height: 16),
@@ -113,25 +102,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
-              letterSpacing: 0.8,
-            ),
-          ),
+          Text(label.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade500, letterSpacing: 0.8)),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF1E293B),
-              height: 1.4,
-            ),
-          ),
+          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1E293B), height: 1.4)),
         ],
       ),
     );
@@ -148,11 +121,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_note, size: 28),
-            onPressed: _editPatient,
-            tooltip: 'Edit Profile',
-          ),
+          IconButton(icon: const Icon(Icons.edit_note, size: 28), onPressed: _editPatient),
           const SizedBox(width: 8),
         ],
       ),
@@ -165,18 +134,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
               decoration: const BoxDecoration(
                 color: Color(0xFF1E3A8A),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
               ),
               child: Row(
                 children: [
                   Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.5), width: 3)),
                     child: CircleAvatar(
                       radius: 36,
                       backgroundColor: Colors.white,
@@ -191,21 +154,25 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _patient.fullName,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
+                        Text(_patient.fullName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 12),
                         Row(
                           children: [
                             _buildBadge(Icons.cake_outlined, '${_patient.age} Yrs'),
                             const SizedBox(width: 12),
-                            _buildBadge(
-                              _patient.gender == 'Male' ? Icons.male : Icons.female, 
-                              _patient.gender,
-                            ),
+                            _buildBadge(_patient.gender == 'Male' ? Icons.male : Icons.female, _patient.gender),
                           ],
                         ),
+                        if (_patient.phoneNumber.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(Icons.phone_outlined, color: Colors.white70, size: 16),
+                              const SizedBox(width: 6),
+                              Text(_patient.phoneNumber, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -252,35 +219,15 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Clinical Visits',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.blue.shade900,
-                        ),
-                      ),
+                      Text('Clinical Visits', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
                       ElevatedButton.icon(
                         onPressed: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NewVisitScreen(patientId: _patient.id!),
-                            ),
-                          );
-                          setState(() {
-                            _loadVisits();
-                          });
+                          await Navigator.push(context, MaterialPageRoute(builder: (context) => NewVisitScreen(patientId: _patient.id!)));
+                          setState(() => _loadVisits());
                         },
                         icon: const Icon(Icons.add, size: 18),
                         label: const Text('Add Visit'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F766E), 
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          elevation: 0,
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F766E), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                       ),
                     ],
                   ),
@@ -289,23 +236,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                   FutureBuilder<List<Visit>>(
                     future: _visitsFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator()));
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
-
+                      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator()));
+                      if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
                       if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade200, width: 2),
-                          ),
+                          width: double.infinity, padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200, width: 2)),
                           child: Column(
                             children: [
                               Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
@@ -317,7 +253,6 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       }
 
                       final visits = snapshot.data!;
-
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -325,32 +260,18 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                         itemBuilder: (context, index) {
                           final visit = visits[index];
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
+                            margin: const EdgeInsets.only(bottom: 12), elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                            child: Ink সেল(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VisitDetailsScreen(visit: visit), // الاستدعاء الصحيح
-                                  ),
-                                );
-                              },
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => VisitDetailsScreen(visit: visit))),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF0F766E).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                      decoration: BoxDecoration(color: const Color(0xFF0F766E).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                                       child: const Icon(Icons.monitor_heart_outlined, color: Color(0xFF0F766E)),
                                     ),
                                     const SizedBox(width: 16),
@@ -358,19 +279,13 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            visit.procedure,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
-                                          ),
+                                          Text(visit.procedure, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
                                               Icon(Icons.calendar_month, size: 14, color: Colors.grey.shade500),
                                               const SizedBox(width: 4),
-                                              Text(
-                                                visit.visitDate.toString().substring(0, 10),
-                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                              ),
+                                              Text(visit.visitDate.toString().substring(0, 10), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                                             ],
                                           ),
                                         ],
@@ -399,10 +314,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   Widget _buildBadge(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
