@@ -222,7 +222,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                       Text('Clinical Visits', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
                       ElevatedButton.icon(
                         onPressed: () async {
-                          await Navigator.push(context, MaterialPageRoute(builder: (context) => NewVisitScreen(patientId: _patient.id!)));
+                          // تم حل مشكلة نوع البيانات هنا (String بدل int)
+                          await Navigator.push(context, MaterialPageRoute(builder: (context) => NewVisitScreen(patientId: _patient.id!.toString())));
                           setState(() => _loadVisits());
                         },
                         icon: const Icon(Icons.add, size: 18),
@@ -259,10 +260,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                         itemCount: visits.length,
                         itemBuilder: (context, index) {
                           final visit = visits[index];
+                          // تم إصلاح مشكلة الأقواس وزر InkWell هنا
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 12), elevation: 0,
+                            margin: const EdgeInsets.only(bottom: 12), 
+                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-                            child: InkWell
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(12),
                               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => VisitDetailsScreen(visit: visit))),
                               child: Padding(
