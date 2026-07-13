@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'dart:io';
 import '../models/visit.dart';
-import '../services/database_helper.dart'; // استدعاء قاعدة البيانات المحلية
+import '../services/database_helper.dart'; 
 
 class NewVisitScreen extends StatefulWidget {
   final String patientId;
@@ -23,6 +27,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   DateTime? _nextVisitDate;
   bool _isLoading = false;
 
+  // قائمة لحفظ الصور الملتقطة
+  final List<File> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+
   final List<String> _procedureTemplates = ['Consultation', 'Follow-up', 'ICU Admission', 'General Anesthesia', 'Spinal Anesthesia', 'Peribulbar Anesthesia', 'Epidural', 'Sedation'];
   final List<String> _investigationsTemplates = ['CBC', 'KFT', 'LFT', 'ECG', 'CXR', 'ABG', 'Echo', 'Coagulation Profile', 'CT Scan'];
   final List<String> _treatmentsTemplates = ['IV Fluids', 'Broad-spectrum Antibiotics', 'Analgesics', 'Antiemetics', 'Inotropes', 'Paracetamol'];
@@ -40,6 +48,52 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     });
   }
 
+  // دالة التقاط الصور
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImages.add(File(pickedFile.path));
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error taking picture: $e')));
+      }
+    }
+  }
+
+  // نافذة اختيار الكاميرا أو الاستوديو
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF1E3A8A)),
+              title: const Text('Take a Photo (Camera)'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF1E3A8A)),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTemplateChips(List<String> templates, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
@@ -48,10 +102,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         runSpacing: 8.0,
         children: templates.map((text) {
           return ActionChip(
-            label: Text(
-              text, 
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F766E))
-            ),
+            label: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F766E))),
             backgroundColor: const Color(0xFF0F766E).withOpacity(0.08),
             side: BorderSide(color: const Color(0xFF0F766E).withOpacity(0.2), width: 1),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -62,23 +113,13 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
-  Widget _buildInputCard({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
+  Widget _buildInputCard({required String title, required IconData icon, required Widget child, Widget? trailing}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -89,14 +130,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
               children: [
                 Icon(icon, size: 20, color: const Color(0xFF1E3A8A)),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
+                Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)))),
+                if (trailing != null) trailing,
               ],
             ),
             const SizedBox(height: 16),
@@ -114,21 +149,13 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFF1E3A8A)),
-          ),
-          child: child!,
-        );
+        return Theme(data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF1E3A8A))), child: child!);
       },
     );
     if (picked != null) {
       setState(() {
-        if (isNextVisit) {
-          _nextVisitDate = picked;
-        } else {
-          _visitDate = picked;
-        }
+        if (isNextVisit) _nextVisitDate = picked;
+        else _visitDate = picked;
       });
     }
   }
@@ -138,8 +165,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       setState(() => _isLoading = true);
 
       Visit newVisit = Visit(
-        id: '', // سيتم إنشاء المعرف تلقائياً في قاعدة البيانات المحلية
-        patientId: widget.patientId,
+        id: null, // تم الإصلاح ليكون متوافقاً مع قاعدة البيانات الجديدة
+        patientId: int.parse(widget.patientId), // تحويل الـ ID إلى رقم
         visitDate: _visitDate,
         procedure: _procedureController.text.trim(),
         investigations: _investigationsController.text.trim(),
@@ -149,20 +176,28 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       );
 
       try {
-        // الحفظ محلياً باستخدام DatabaseHelper
-        await DatabaseHelper.instance.insertVisit(newVisit);
+        // حفظ الزيارة أولاً والحصول على رقمها (ID)
+        int newVisitId = await DatabaseHelper.instance.insertVisit(newVisit);
         
+        // حفظ الصور برقم الزيارة في التخزين الدائم
+        if (_selectedImages.isNotEmpty) {
+          final directory = await getApplicationDocumentsDirectory();
+          for (var image in _selectedImages) {
+            final fileName = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(image.path)}';
+            final savedImage = await image.copy('${directory.path}/$fileName');
+            await DatabaseHelper.instance.insertImage(newVisitId, savedImage.path);
+          }
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Visit recorded successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Visit and files saved successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
           );
           Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
         }
       } finally {
         setState(() => _isLoading = false);
@@ -194,11 +229,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.1)),
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFF1E3A8A).withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.1))),
                         child: Row(
                           children: [
                             const Icon(Icons.calendar_month, color: Color(0xFF1E3A8A), size: 28),
@@ -208,10 +239,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                               children: [
                                 const Text('Date of Visit', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 4),
-                                Text(
-                                  _visitDate.toString().substring(0, 10),
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
-                                ),
+                                Text(_visitDate.toString().substring(0, 10), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
                               ],
                             ),
                             const Spacer(),
@@ -239,9 +267,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       ),
                     ),
 
+                    // تعديل قسم الفحوصات ليشمل الكاميرا
                     _buildInputCard(
                       title: 'Investigations & Imaging',
                       icon: Icons.biotech_outlined,
+                      trailing: IconButton(
+                        icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
+                        tooltip: 'Attach Documents',
+                        onPressed: _showImageSourceDialog,
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -251,6 +286,47 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             maxLines: 2,
                           ),
                           _buildTemplateChips(_investigationsTemplates, _investigationsController),
+                          
+                          // عرض الصور الملتقطة
+                          if (_selectedImages.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 90,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _selectedImages.length,
+                                itemBuilder: (context, index) {
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 12, top: 8),
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          image: DecorationImage(image: FileImage(_selectedImages[index]), fit: BoxFit.cover),
+                                          border: Border.all(color: Colors.grey.shade300),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 4, top: 0,
+                                        child: InkWell(
+                                          onTap: () => setState(() => _selectedImages.removeAt(index)),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                            child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ]
                         ],
                       ),
                     ),
@@ -292,11 +368,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                        ),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid)),
                         child: Row(
                           children: [
                             Icon(Icons.event_available, color: _nextVisitDate == null ? Colors.grey : const Color(0xFF0F766E), size: 28),
@@ -306,22 +378,12 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                               children: [
                                 const Text('Next Visit Date (Optional)', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 4),
-                                Text(
-                                  _nextVisitDate == null ? 'Not Scheduled' : _nextVisitDate!.toString().substring(0, 10),
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _nextVisitDate == null ? Colors.grey : const Color(0xFF1E293B)),
-                                ),
+                                Text(_nextVisitDate == null ? 'Not Scheduled' : _nextVisitDate!.toString().substring(0, 10), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _nextVisitDate == null ? Colors.grey : const Color(0xFF1E293B))),
                               ],
                             ),
                             const Spacer(),
                             if (_nextVisitDate != null)
-                              IconButton(
-                                icon: const Icon(Icons.clear, color: Colors.red, size: 20),
-                                onPressed: () {
-                                  setState(() {
-                                    _nextVisitDate = null;
-                                  });
-                                },
-                              )
+                              IconButton(icon: const Icon(Icons.clear, color: Colors.red, size: 20), onPressed: () => setState(() => _nextVisitDate = null))
                             else
                               const Icon(Icons.add_circle_outline, color: Colors.grey, size: 20),
                           ],
@@ -337,12 +399,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                         onPressed: _saveVisit,
                         icon: const Icon(Icons.save),
                         label: const Text('Save Visit Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 2,
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 2),
                       ),
                     ),
                     const SizedBox(height: 40),
