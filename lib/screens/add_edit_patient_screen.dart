@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../models/patient.dart';
 import '../services/database_helper.dart';
 
@@ -32,7 +33,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
 
   bool _isLoading = false;
 
-  // إعدادات الكاميرا والصور
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -72,6 +72,43 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
     _finalDiagnosisController.dispose();
     _firstTreatmentPlanController.dispose();
     super.dispose();
+  }
+
+  // --- دالة استخراج النص من الصورة (OCR) ---
+  Future<void> _scanTextFromImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+      if (pickedFile != null) {
+        setState(() => _isLoading = true);
+        
+        final inputImage = InputImage.fromFilePath(pickedFile.path);
+        // نستخدم المحرك اللاتيني الذي يقرأ الإنجليزية والأرقام والرموز الطبية بكفاءة
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        
+        await textRecognizer.close();
+        
+        if (recognizedText.text.isNotEmpty) {
+           final currentText = _investigationController.text;
+           setState(() {
+             _investigationController.text = currentText.isEmpty 
+                 ? recognizedText.text 
+                 : '$currentText\n\n${recognizedText.text}';
+           });
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text extracted successfully!'), backgroundColor: Colors.green));
+           }
+        } else {
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in the image.'), backgroundColor: Colors.orange));
+           }
+        }
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error scanning text: $e'), backgroundColor: Colors.red));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -208,7 +245,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
           patientIdToUse = widget.patient!.id!;
         }
 
-        // حفظ الصور بعد تأكيد حفظ المريض
         if (_selectedImages.isNotEmpty) {
           final directory = await getApplicationDocumentsDirectory();
           for (var image in _selectedImages) {
@@ -321,11 +357,25 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                     _buildSectionCard(
                       title: 'Diagnostics (Optional)',
                       icon: Icons.biotech_outlined,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
-                        tooltip: 'Attach Baseline Documents',
-                        onPressed: _showImageSourceDialog,
-                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // زر الـ OCR الجديد!
+                          IconButton(
+                            icon: const Icon(Icons.document_scanner_outlined, color: Color(0xFF1E3A8A)),
+                            tooltip: 'Scan Text from Document',
+                            onPressed: _scanTextFromImage,
+                            style: IconButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1)),
+                          ),
+                          const SizedBox(width: 8),
+                          // زر الكاميرا للصور
+                          IconButton(
+                            icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
+                            tooltip: 'Attach Baseline Documents',
+                            onPressed: _showImageSourceDialog,
+                            style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                          ),
+                        ],
                       ),
                       children: [
                         TextFormField(
@@ -335,7 +385,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                         ),
                         _buildTemplateChips(_invTemplates, _investigationController),
                         
-                        // عرض الصور الملتقطة
                         if (_selectedImages.isNotEmpty) ...[
                           const SizedBox(height: 16),
                           const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
