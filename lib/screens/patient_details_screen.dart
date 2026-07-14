@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/patient.dart';
 import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import 'add_edit_patient_screen.dart';
 import 'new_visit_screen.dart';
-import 'visits_details_screen.dart'; // تم تصحيح حرف الـ s هنا
+import 'visits_details_screen.dart'; 
 
 class PatientDetailsScreen extends StatefulWidget {
   final Patient patient;
@@ -18,16 +19,40 @@ class PatientDetailsScreen extends StatefulWidget {
 class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   late Patient _patient;
   late Future<List<Visit>> _visitsFuture;
+  
+  // متغيرات الصور الأساسية للمريض
+  List<String> _patientImages = [];
+  bool _isLoadingImages = true;
 
   @override
   void initState() {
     super.initState();
     _patient = widget.patient;
     _loadVisits(); 
+    _loadPatientImages();
   }
 
   void _loadVisits() {
     _visitsFuture = DatabaseHelper.instance.getVisitsForPatient(_patient.id!);
+  }
+
+  // دالة تحميل صور المريض الأساسية
+  Future<void> _loadPatientImages() async {
+    if (_patient.id != null) {
+      try {
+        final paths = await DatabaseHelper.instance.getImagesForPatient(_patient.id!);
+        if (mounted) {
+          setState(() {
+            _patientImages = paths;
+            _isLoadingImages = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoadingImages = false);
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingImages = false);
+    }
   }
 
   void _editPatient() async {
@@ -51,8 +76,102 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         setState(() {
           _patient = updatedPatient;
         });
+        _loadVisits();
+        _loadPatientImages();
       }
     } catch (e) {}
+  }
+
+  // دالة عرض الصورة مكبرة
+  void _showFullImage(File file) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.file(file, fit: BoxFit.contain),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // معرض صور المريض الأساسية
+  Widget _buildBaselineImageGallery() {
+    if (_isLoadingImages) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 10.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_patientImages.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12.0, top: 4.0),
+          child: Text(
+            'Baseline Documents & Imaging',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey, letterSpacing: 0.8),
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _patientImages.length,
+            itemBuilder: (context, index) {
+              final file = File(_patientImages[index]);
+              return GestureDetector(
+                onTap: () => _showFullImage(file),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  width: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                    image: DecorationImage(
+                      image: FileImage(file),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
   }
 
   Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
@@ -198,6 +317,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     icon: Icons.biotech_outlined,
                     children: [
                       _buildDataField('Investigations & Imaging', _patient.investigationAndImaging),
+                      _buildBaselineImageGallery(), // عرض الصور الأساسية هنا!
                       _buildDataField('Differential Diagnosis', _patient.differentialDiagnosis),
                       _buildDataField('Final Diagnosis', _patient.finalDiagnosis),
                     ],
