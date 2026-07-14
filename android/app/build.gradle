@@ -27,13 +27,13 @@ android {
         multiDexEnabled = true
     }
 
-        buildTypes {
+    buildTypes {
         release {
             signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
+} // <--- هذا القوس كان مفقوداً وهو سبب الخطأ
 
 flutter {
     source = "../.."
