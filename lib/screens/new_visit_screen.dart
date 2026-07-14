@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 
@@ -45,6 +46,42 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       }
       controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
     });
+  }
+
+  // --- دالة استخراج النص من الصورة (OCR) ---
+  Future<void> _scanTextFromImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+      if (pickedFile != null) {
+        setState(() => _isLoading = true);
+        
+        final inputImage = InputImage.fromFilePath(pickedFile.path);
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        
+        await textRecognizer.close();
+        
+        if (recognizedText.text.isNotEmpty) {
+           final currentText = _investigationsController.text;
+           setState(() {
+             _investigationsController.text = currentText.isEmpty 
+                 ? recognizedText.text 
+                 : '$currentText\n\n${recognizedText.text}';
+           });
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text extracted successfully!'), backgroundColor: Colors.green));
+           }
+        } else {
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in the image.'), backgroundColor: Colors.orange));
+           }
+        }
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error scanning text: $e'), backgroundColor: Colors.red));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -169,7 +206,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         investigations: _investigationsController.text.trim(),
         treatments: _treatmentsController.text.trim(),
         advices: _advicesController.text.trim(),
-        nextVisitDate: _nextVisitDate?.toString(), // تم حل المشكلة هنا بتحويل التاريخ إلى نص
+        nextVisitDate: _nextVisitDate?.toString(), 
       );
 
       try {
@@ -265,11 +302,25 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     _buildInputCard(
                       title: 'Investigations & Imaging',
                       icon: Icons.biotech_outlined,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
-                        tooltip: 'Attach Documents',
-                        onPressed: _showImageSourceDialog,
-                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // زر الـ OCR الجديد للزيارات
+                          IconButton(
+                            icon: const Icon(Icons.document_scanner_outlined, color: Color(0xFF1E3A8A)),
+                            tooltip: 'Scan Text from Document',
+                            onPressed: _scanTextFromImage,
+                            style: IconButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1)),
+                          ),
+                          const SizedBox(width: 8),
+                          // زر الكاميرا للصور
+                          IconButton(
+                            icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
+                            tooltip: 'Attach Documents',
+                            onPressed: _showImageSourceDialog,
+                            style: IconButton.styleFrom(backgroundColor: const Color(0xFF0F766E).withOpacity(0.1)),
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
