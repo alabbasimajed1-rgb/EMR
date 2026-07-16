@@ -7,6 +7,7 @@ import 'report_screen.dart';
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <-- استيراد الترجمة
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -122,6 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // <-- اختصار القاموس
     final now = DateTime.now();
     final dateString = "${now.day} ${_getMonthName(now.month)} ${now.year}";
 
@@ -177,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: IconButton(
                               icon: const Icon(Icons.lock_outline, color: Colors.white, size: 22),
                               onPressed: _logout,
-                              tooltip: 'Secure Clinic', // تم تعديل الوصف هنا
+                              tooltip: l10n.secureClinic, // استخدام الترجمة
                             ),
                           ),
                         ],
@@ -197,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (context, snapshot) {
                           String count = snapshot.data?.toString() ?? "0";
                           return _buildStatCard(
-                            'Total Patients', 
+                            l10n.totalPatients, // استخدام الترجمة
                             count, 
                             Icons.people_alt_rounded, 
                             const Color(0xFF3B82F6),
@@ -211,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (context, snapshot) {
                           String count = snapshot.data?.toString() ?? "0";
                           return _buildStatCard(
-                            'Total Visits', 
+                            l10n.totalVisits, // استخدام الترجمة
                             count, 
                             Icons.monitor_heart_rounded, 
                             const Color(0xFF10B981),
@@ -232,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
+                  Text(l10n.quickActions, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.blue.shade900)), // استخدام الترجمة
                   const SizedBox(height: 16),
                   GridView.count(
                     crossAxisCount: 2,
@@ -243,23 +245,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
                       _buildQuickAction(
-                        'New Patient', 
+                        l10n.newPatient, // استخدام الترجمة
                         Icons.person_add_alt_1_rounded, 
                         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEditPatientScreen())).then((_) => _refreshData()),
                         isPrimary: true,
                       ),
                       _buildQuickAction(
-                        'My Patients', 
+                        l10n.myPatients, // استخدام الترجمة
                         Icons.view_list_rounded, 
                         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsListScreen())).then((_) => _refreshData()), 
                       ),
                       _buildQuickAction(
-                        'Clinical Reports', 
+                        l10n.clinicalReports, // استخدام الترجمة
                         Icons.analytics_rounded, 
                         () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportsScreen())), 
                       ),
                       _buildQuickAction(
-                        'Settings', 
+                        l10n.settings, // استخدام الترجمة
                         Icons.settings_rounded, 
                         () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())).then((_) => _refreshData()), 
                       ),
@@ -276,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getMonthName(int month) {
+    // يمكن ترك الأشهر بالإنجليزية أو إضافتها للقاموس لاحقاً إذا رغبت
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
   }
