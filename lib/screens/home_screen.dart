@@ -7,7 +7,8 @@ import 'report_screen.dart';
 import 'login_screen.dart';
 import 'patients_list_screen.dart'; 
 import 'settings_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <-- استيراد الترجمة
+import '../l10n/app_localizations.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
