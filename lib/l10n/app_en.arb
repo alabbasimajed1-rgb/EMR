@@ -39,5 +39,12 @@
   "backupToCloud": "Backup Data to Cloud",
   "restoreFromCloud": "Restore Data from Cloud",
   "signOut": "Sign out of Google",
-  "successSave": "Saved successfully!"
+  "successSave": "Saved successfully!",
+  "totalPatients": "Total Patients",
+  "totalVisits": "Total Visits",
+  "quickActions": "Quick Actions",
+  "newPatient": "New Patient",
+  "myPatients": "My Patients",
+  "clinicalReports": "Clinical Reports",
+  "secureClinic": "Secure Clinic"
 }
