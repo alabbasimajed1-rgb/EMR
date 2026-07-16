@@ -15,6 +15,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+            // ... الكود السابق الخاص بـ MaterialApp ...
+      
+      // --- إعدادات اللغة (Localization) ---
+      localizationsDelegates: const [
+        AppLocalizations.delegate, // القاموس الخاص بنا
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // الإنجليزية
+        Locale('ar'), // العربية
+      ],
+      
+      // ... بقية الكود (مثل home وغيرها) ...
+
       // --- بداية الثيم الشامل (Global Theme) ---
       theme: ThemeData(
         useMaterial3: true,
