@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/visit.dart';
 import '../models/patient.dart';
 import '../services/database_helper.dart'; 
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <--- استيراد الترجمة
+import '../l10n/app_localizations.dart'; // <--- المسار المباشر الصحيح
+
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
