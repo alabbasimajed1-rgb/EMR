@@ -7,6 +7,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import '../services/google_drive_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <--- استيراد الترجمة
 
 class NewVisitScreen extends StatefulWidget {
   final String patientId;
@@ -119,22 +120,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
               leading: const Icon(Icons.photo_library, color: Color(0xFF1E3A8A)),
               title: const Text('Choose from Gallery'),
               onTap: () {
-                          // ==============================================================
-          // النسخ الاحتياطي التلقائي (في الخلفية بصمت)
-          // ==============================================================
-          Future.microtask(() async {
-            try {
-              // إنشاء نسخة من خدمة جوجل درايف ثم استدعاء دالة الرفع
-              final driveService = GoogleDriveService();
-              await driveService.backupDatabase();
-              
-              debugPrint("Silent backup completed successfully after saving patient."); 
-            } catch (e) {
-              debugPrint("Silent backup failed: $e"); 
-            }
-          });
-          // ==============================================================
-
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
               },
@@ -240,8 +225,23 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Visit and files saved successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+            SnackBar(content: Text(AppLocalizations.of(context)!.successSave, style: const TextStyle(color: Colors.white)), backgroundColor: Colors.green),
           );
+          
+          // ==============================================================
+          // النسخ الاحتياطي التلقائي (في الخلفية بصمت) تم نقله للمكان الصحيح!
+          // ==============================================================
+          Future.microtask(() async {
+            try {
+              final driveService = GoogleDriveService();
+              await driveService.backupDatabase();
+              debugPrint("Silent backup completed successfully after saving visit."); 
+            } catch (e) {
+              debugPrint("Silent backup failed: $e"); 
+            }
+          });
+          // ==============================================================
+
           Navigator.pop(context);
         }
       } catch (e) {
@@ -256,10 +256,12 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // اختصار للقاموس
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Add Clinical Visit', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.addClinicalVisit, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -286,7 +288,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Date of Visit', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+                                const Text('Date of Visit', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)), // يمكن إضافتها للقاموس لاحقاً
                                 const SizedBox(height: 4),
                                 Text(_visitDate.toString().substring(0, 10), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
                               ],
@@ -300,7 +302,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     const SizedBox(height: 24),
 
                     _buildInputCard(
-                      title: 'Complaint / Procedure *',
+                      title: '${l10n.chiefComplaint} *', // استخدام الترجمة
                       icon: Icons.monitor_heart_outlined,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,7 +311,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             controller: _procedureController,
                             decoration: const InputDecoration(hintText: 'e.g., General Anesthesia, Follow-up...'),
                             maxLines: 2,
-                            validator: (value) => value == null || value.isEmpty ? 'This field is required' : null,
+                            validator: (value) => value == null || value.isEmpty ? l10n.requiredField : null,
                           ),
                           _buildTemplateChips(_procedureTemplates, _procedureController),
                         ],
@@ -317,12 +319,11 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
 
                     _buildInputCard(
-                      title: 'Investigations & Imaging',
+                      title: l10n.investigationsImaging, // استخدام الترجمة
                       icon: Icons.biotech_outlined,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // زر الـ OCR الجديد للزيارات
                           IconButton(
                             icon: const Icon(Icons.document_scanner_outlined, color: Color(0xFF1E3A8A)),
                             tooltip: 'Scan Text from Document',
@@ -330,7 +331,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             style: IconButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1)),
                           ),
                           const SizedBox(width: 8),
-                          // زر الكاميرا للصور
                           IconButton(
                             icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
                             tooltip: 'Attach Documents',
@@ -393,7 +393,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
 
                     _buildInputCard(
-                      title: 'Treatments Prescribed',
+                      title: l10n.managementPlan, // استخدام الترجمة
                       icon: Icons.medication_outlined,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,7 +409,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
 
                     _buildInputCard(
-                      title: 'Clinical Advices',
+                      title: l10n.clinicalAdvices, // استخدام الترجمة
                       icon: Icons.lightbulb_outline,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,9 +437,9 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Next Visit Date (Optional)', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+                                Text('${l10n.nextVisitDate} ${l10n.optional}', style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)), // استخدام الترجمة
                                 const SizedBox(height: 4),
-                                Text(_nextVisitDate == null ? 'Not Scheduled' : _nextVisitDate!.toString().substring(0, 10), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _nextVisitDate == null ? Colors.grey : const Color(0xFF1E293B))),
+                                Text(_nextVisitDate == null ? l10n.notScheduled : _nextVisitDate!.toString().substring(0, 10), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _nextVisitDate == null ? Colors.grey : const Color(0xFF1E293B))), // استخدام الترجمة
                               ],
                             ),
                             const Spacer(),
@@ -459,7 +459,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _saveVisit,
                         icon: const Icon(Icons.save),
-                        label: const Text('Save Visit Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        label: Text(l10n.saveVisitRecord, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), // استخدام الترجمة
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 2),
                       ),
                     ),
