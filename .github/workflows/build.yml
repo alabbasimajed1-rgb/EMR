@@ -1,4 +1,4 @@
-name: Build Flutter APK
+Name: Build Flutter APK
 
 on:
   push:
@@ -27,6 +27,11 @@ jobs:
     
     - name: Fix Permissions
       run: chmod +x android/gradlew 2>/dev/null || true
+
+    # --- الخطوة الجديدة: استخراج المفتاح السري من الخزنة ---
+    - name: Decode Keystore
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
     
     - name: Clean Project
       run: flutter clean
@@ -37,7 +42,10 @@ jobs:
     - name: Generate App Icon
       run: dart run flutter_launcher_icons
     
+    # --- تحديث خطوة البناء لاستخدام كلمة السر السحابية ---
     - name: Build APK
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       run: flutter build apk --release --android-skip-build-dependency-validation
     
     - name: Upload APK
