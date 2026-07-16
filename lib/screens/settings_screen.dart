@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/google_drive_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  // نضيف هنا خاصية لتلقي دالة تغيير اللغة من الشاشة الرئيسية إذا لزم الأمر
+  final Function(Locale)? onLocaleChange;
+  
+  const SettingsScreen({super.key, this.onLocaleChange});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -16,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   bool _isBackingUp = false;
   bool _isRestoring = false;
+  String _currentLanguageCode = 'en'; // اللغة الافتراضية
 
   @override
   void initState() {
@@ -28,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _doctorNameController.text = prefs.getString('doctor_name') ?? '';
       _specialtyController.text = prefs.getString('doctor_specialty') ?? '';
+      _currentLanguageCode = prefs.getString('language_code') ?? 'en';
     });
   }
 
@@ -37,8 +43,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('doctor_specialty', _specialtyController.text.trim());
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved successfully'), backgroundColor: Colors.green),
+        SnackBar(content: Text(AppLocalizations.of(context)!.successSave), backgroundColor: Colors.green),
       );
+    }
+  }
+
+  Future<void> _changeLanguage(String langCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language_code', langCode);
+    setState(() {
+      _currentLanguageCode = langCode;
+    });
+    
+    // استدعاء دالة تغيير اللغة لتحديث التطبيق بالكامل
+    if (widget.onLocaleChange != null) {
+      widget.onLocaleChange!(Locale(langCode));
     }
   }
 
@@ -51,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Backup completed successfully!' : 'Backup failed. Please try again.'),
+          content: Text(success ? AppLocalizations.of(context)!.successSave : 'Backup failed. Please try again.'), // يمكن إضافة الترجمة للفشل لاحقاً
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -59,12 +78,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _performRestore() async {
-    // نطلب تأكيداً من المستخدم قبل الاستعادة لأنها ستمسح البيانات الحالية
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restore Backup?'),
-        content: const Text('This will OVERWRITE all your current app data with the data from Google Drive. Are you sure?'),
+        title: const Text('Restore Backup?'), // يمكن ترجمته لاحقاً
+        content: const Text('This will OVERWRITE all your current app data with the data from Google Drive. Are you sure?'), // يمكن ترجمته لاحقاً
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
@@ -84,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Data restored successfully! Please restart the app.' : 'Restore failed. No backup found or connection error.'),
+          content: Text(success ? 'Data restored successfully! Please restart the app.' : 'Restore failed. No backup found or connection error.'), // يمكن ترجمته لاحقاً
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -93,10 +111,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // اختصار لسهولة الوصول للقاموس
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.settings, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -107,7 +128,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Doctor Profile (For Reports)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            // --- قسم تغيير اللغة الجديد ---
+            Text('Language / اللغة', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _currentLanguageCode,
+                  isExpanded: true,
+                  icon: const Icon(Icons.language, color: Color(0xFF1E3A8A)),
+                  items: const [
+                    DropdownMenuItem(value: 'en', child: Text('English')),
+                    DropdownMenuItem(value: 'ar', child: Text('العربية')),
+                  ],
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _changeLanguage(newValue);
+                    }
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // --- الملف الشخصي للطبيب ---
+            Text(l10n.doctorProfile, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
@@ -116,12 +163,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   TextField(
                     controller: _doctorNameController,
-                    decoration: InputDecoration(labelText: 'Doctor Name', prefixIcon: const Icon(Icons.person_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    decoration: InputDecoration(labelText: l10n.doctorName, prefixIcon: const Icon(Icons.person_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _specialtyController,
-                    decoration: InputDecoration(labelText: 'Specialty / Department', prefixIcon: const Icon(Icons.medical_services_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    decoration: InputDecoration(labelText: l10n.specialty, prefixIcon: const Icon(Icons.medical_services_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -130,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: ElevatedButton(
                       onPressed: _saveSettings,
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Save Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Text(l10n.saveProfile, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   )
                 ],
@@ -138,23 +185,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             
             const SizedBox(height: 32),
-            const Text('Data & Cloud Backup', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            // --- النسخ الاحتياطي السحابي ---
+            Text(l10n.dataCloudBackup, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
               child: Column(
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.cloud_done, color: Colors.green, size: 28),
-                      SizedBox(width: 16),
+                      const Icon(Icons.cloud_done, color: Colors.green, size: 28),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Google Drive Backup', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text('Securely save your patient records to your personal Google Drive.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            Text(l10n.googleDriveBackup, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('Securely save your patient records to your personal Google Drive.', style: const TextStyle(color: Colors.grey, fontSize: 13)), // يمكن ترجمته لاحقاً
                           ],
                         ),
                       )
@@ -166,7 +214,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _isBackingUp || _isRestoring ? null : _performBackup,
                       icon: _isBackingUp ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.cloud_upload),
-                      label: Text(_isBackingUp ? 'Uploading...' : 'Backup Data to Cloud'),
+                      label: Text(_isBackingUp ? 'Uploading...' : l10n.backupToCloud),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F766E), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     ),
                   ),
@@ -176,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _isBackingUp || _isRestoring ? null : _performRestore,
                       icon: _isRestoring ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.cloud_download),
-                      label: Text(_isRestoring ? 'Downloading...' : 'Restore Data from Cloud'),
+                      label: Text(_isRestoring ? 'Downloading...' : l10n.restoreFromCloud),
                       style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF1E3A8A), side: const BorderSide(color: Color(0xFF1E3A8A)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     ),
                   ),
@@ -184,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextButton.icon(
                     onPressed: () => _driveService.signOut(),
                     icon: const Icon(Icons.logout, size: 18),
-                    label: const Text('Sign out of Google'),
+                    label: Text(l10n.signOut),
                     style: TextButton.styleFrom(foregroundColor: Colors.red),
                   )
                 ],
