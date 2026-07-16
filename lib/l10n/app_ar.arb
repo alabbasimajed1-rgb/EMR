@@ -39,5 +39,12 @@
   "backupToCloud": "رفع النسخة الاحتياطية",
   "restoreFromCloud": "استعادة البيانات من السحابة",
   "signOut": "تسجيل الخروج من جوجل",
-  "successSave": "تم الحفظ بنجاح!"
+  "successSave": "تم الحفظ بنجاح!",
+  "totalPatients": "إجمالي المرضى",
+  "totalVisits": "إجمالي الزيارات",
+  "quickActions": "إجراءات سريعة",
+  "newPatient": "مريض جديد",
+  "myPatients": "قائمة المرضى",
+  "clinicalReports": "التقارير السريرية",
+  "secureClinic": "تأمين العيادة"
 }
