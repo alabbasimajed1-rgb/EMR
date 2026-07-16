@@ -18,6 +18,16 @@ android {
         jvmTarget = "1.8"
     }
 
+    // --- إعدادات التوقيع الرسمي باستخدام الأسرار المخبأة ---
+    signingConfigs {
+        release {
+            storeFile file("upload-keystore.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias "upload"
+            keyPassword System.getenv("KEYSTORE_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.drmajed.emr"
         minSdk = 23
@@ -25,12 +35,11 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
-        signingConfig signingConfigs.debug
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
