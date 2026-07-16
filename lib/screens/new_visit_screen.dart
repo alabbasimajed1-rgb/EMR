@@ -118,6 +118,22 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
               leading: const Icon(Icons.photo_library, color: Color(0xFF1E3A8A)),
               title: const Text('Choose from Gallery'),
               onTap: () {
+                          // ==============================================================
+          // النسخ الاحتياطي التلقائي (في الخلفية بصمت)
+          // ==============================================================
+          Future.microtask(() async {
+            try {
+              // إنشاء نسخة من خدمة جوجل درايف ثم استدعاء دالة الرفع
+              final driveService = GoogleDriveService();
+              await driveService.backupDatabase();
+              
+              debugPrint("Silent backup completed successfully after saving patient."); 
+            } catch (e) {
+              debugPrint("Silent backup failed: $e"); 
+            }
+          });
+          // ==============================================================
+
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
               },
