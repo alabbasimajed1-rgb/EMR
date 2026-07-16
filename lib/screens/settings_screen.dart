@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/google_drive_service.dart';
 import '../l10n/app_localizations.dart';
+import '../main.dart'; // <--- استيراد ملف main.dart للوصول لدالة MyApp.setLocale
 
 class SettingsScreen extends StatefulWidget {
-  // نضيف هنا خاصية لتلقي دالة تغيير اللغة من الشاشة الرئيسية إذا لزم الأمر
   final Function(Locale)? onLocaleChange;
   
   const SettingsScreen({super.key, this.onLocaleChange});
@@ -20,7 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   bool _isBackingUp = false;
   bool _isRestoring = false;
-  String _currentLanguageCode = 'en'; // اللغة الافتراضية
+  String _currentLanguageCode = 'en';
 
   @override
   void initState() {
@@ -48,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // --- الدالة المحدثة لتغيير اللغة فوراً ---
   Future<void> _changeLanguage(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language_code', langCode);
@@ -55,13 +56,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _currentLanguageCode = langCode;
     });
     
-    // استدعاء دالة تغيير اللغة لتحديث التطبيق بالكامل
+    if (mounted) {
+      // إجبار التطبيق بالكامل على التحديث للغة الجديدة
+      MyApp.setLocale(context, Locale(langCode));
+    }
+    
     if (widget.onLocaleChange != null) {
       widget.onLocaleChange!(Locale(langCode));
     }
   }
 
-  // --- دوال النسخ الاحتياطي والاستعادة ---
   Future<void> _performBackup() async {
     setState(() => _isBackingUp = true);
     final success = await _driveService.backupDatabase();
@@ -70,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? AppLocalizations.of(context)!.successSave : 'Backup failed. Please try again.'), // يمكن إضافة الترجمة للفشل لاحقاً
+          content: Text(success ? AppLocalizations.of(context)!.successSave : 'Backup failed. Please try again.'), 
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -81,8 +85,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restore Backup?'), // يمكن ترجمته لاحقاً
-        content: const Text('This will OVERWRITE all your current app data with the data from Google Drive. Are you sure?'), // يمكن ترجمته لاحقاً
+        title: const Text('Restore Backup?'), 
+        content: const Text('This will OVERWRITE all your current app data with the data from Google Drive. Are you sure?'), 
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
@@ -102,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Data restored successfully! Please restart the app.' : 'Restore failed. No backup found or connection error.'), // يمكن ترجمته لاحقاً
+          content: Text(success ? 'Data restored successfully! Please restart the app.' : 'Restore failed. No backup found or connection error.'), 
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -111,7 +115,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // اختصار لسهولة الوصول للقاموس
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -128,7 +131,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- قسم تغيير اللغة الجديد ---
             Text('Language / اللغة', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
@@ -153,7 +155,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 32),
 
-            // --- الملف الشخصي للطبيب ---
             Text(l10n.doctorProfile, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
@@ -185,7 +186,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             
             const SizedBox(height: 32),
-            // --- النسخ الاحتياطي السحابي ---
             Text(l10n.dataCloudBackup, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
@@ -202,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(l10n.googleDriveBackup, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text('Securely save your patient records to your personal Google Drive.', style: const TextStyle(color: Colors.grey, fontSize: 13)), // يمكن ترجمته لاحقاً
+                            const Text('Securely save your patient records to your personal Google Drive.', style: TextStyle(color: Colors.grey, fontSize: 13)), 
                           ],
                         ),
                       )
