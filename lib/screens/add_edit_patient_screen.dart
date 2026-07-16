@@ -6,9 +6,8 @@ import 'dart:io';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../models/patient.dart';
 import '../services/database_helper.dart';
-
-// 🔴 تنبيه هام: قم بفك التعليق (إزالة //) عن السطر التالي واكتب مسار ملف خدمة جوجل درايف الخاص بك
-import '../services/google_drive_service.dart'; 
+import '../services/google_drive_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <--- إضافة استيراد ملفات الترجمة
 
 class AddEditPatientScreen extends StatefulWidget {
   final Patient? patient;
@@ -25,7 +24,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _phoneController = TextEditingController();
-  String _gender = 'Male';
+  String _gender = 'Male'; // سنقوم بمعالجتها في البناء لتتوافق مع الترجمة
 
   final _chiefComplaintController = TextEditingController();
   final _medicalHistoryController = TextEditingController();
@@ -98,11 +97,11 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                  : '$currentText\n\n${recognizedText.text}';
            });
            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text extracted successfully!'), backgroundColor: Colors.green));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text extracted successfully!'), backgroundColor: Colors.green)); // يمكن ترجمتها لاحقاً
            }
         } else {
            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in the image.'), backgroundColor: Colors.orange));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in the image.'), backgroundColor: Colors.orange)); // يمكن ترجمتها لاحقاً
            }
         }
       }
@@ -135,7 +134,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Color(0xFF1E3A8A)),
-              title: const Text('Take a Photo (Camera)'),
+              title: const Text('Take a Photo (Camera)'), // يمكن ترجمتها لاحقاً
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -143,7 +142,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Color(0xFF1E3A8A)),
-              title: const Text('Choose from Gallery'),
+              title: const Text('Choose from Gallery'), // يمكن ترجمتها لاحقاً
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -258,24 +257,18 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Patient saved successfully!'), backgroundColor: Colors.green),
+            SnackBar(content: Text(AppLocalizations.of(context)!.successSave), backgroundColor: Colors.green),
           );
           
-                    // ==============================================================
-          // النسخ الاحتياطي التلقائي (في الخلفية بصمت)
-          // ==============================================================
           Future.microtask(() async {
             try {
-              // إنشاء نسخة من خدمة جوجل درايف ثم استدعاء دالة الرفع
               final driveService = GoogleDriveService();
               await driveService.backupDatabase();
-              
               debugPrint("Silent backup completed successfully after saving patient."); 
             } catch (e) {
               debugPrint("Silent backup failed: $e"); 
             }
           });
-          // ==============================================================
 
           Navigator.pop(context, true);
         }
@@ -291,10 +284,13 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // اختصار للوصول للقاموس
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(widget.patient == null ? 'Add New Patient' : 'Edit Patient', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.patient == null ? l10n.addNewPatient : l10n.editPatient, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -309,13 +305,13 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                 child: Column(
                   children: [
                     _buildSectionCard(
-                      title: 'Personal Information *',
+                      title: l10n.personalInformation,
                       icon: Icons.person_outline,
                       children: [
                         TextFormField(
                           controller: _nameController,
-                          decoration: InputDecoration(labelText: 'Full Name *', prefixIcon: const Icon(Icons.badge_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                          validator: (value) => value == null || value.isEmpty ? 'Please enter patient name' : null,
+                          decoration: InputDecoration(labelText: '${l10n.fullName} *', prefixIcon: const Icon(Icons.badge_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          validator: (value) => value == null || value.isEmpty ? l10n.requiredField : null,
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -323,10 +319,10 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _ageController,
-                                decoration: InputDecoration(labelText: 'Age *', prefixIcon: const Icon(Icons.cake_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                decoration: InputDecoration(labelText: '${l10n.age} *', prefixIcon: const Icon(Icons.cake_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) return 'Required';
+                                  if (value == null || value.isEmpty) return l10n.requiredField;
                                   if (int.tryParse(value) == null) return 'Invalid';
                                   return null;
                                 },
@@ -336,8 +332,11 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                             Expanded(
                               child: DropdownButtonFormField<String>(
                                 value: _gender,
-                                decoration: InputDecoration(labelText: 'Gender *', prefixIcon: const Icon(Icons.people_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                items: ['Male', 'Female'].map((String value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+                                decoration: InputDecoration(labelText: '${l10n.gender} *', prefixIcon: const Icon(Icons.people_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                items: [
+                                  DropdownMenuItem(value: 'Male', child: Text(l10n.male)),
+                                  DropdownMenuItem(value: 'Female', child: Text(l10n.female)),
+                                ].toList(),
                                 onChanged: (newValue) => setState(() => _gender = newValue!),
                               ),
                             ),
@@ -346,27 +345,27 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _phoneController,
-                          decoration: InputDecoration(labelText: 'Phone Number (Optional)', prefixIcon: const Icon(Icons.phone_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: '${l10n.phoneNumber} ${l10n.optional}', prefixIcon: const Icon(Icons.phone_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           keyboardType: TextInputType.phone,
                         ),
                       ],
                     ),
 
                     _buildSectionCard(
-                      title: 'Clinical Assessment',
+                      title: l10n.clinicalAssessment,
                       icon: Icons.monitor_heart_outlined,
                       children: [
                         TextFormField(
                           controller: _chiefComplaintController,
-                          decoration: InputDecoration(labelText: 'Chief Complaint *', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: '${l10n.chiefComplaint} *', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
-                          validator: (value) => value == null || value.isEmpty ? 'This field is required' : null,
+                          validator: (value) => value == null || value.isEmpty ? l10n.requiredField : null,
                         ),
                         _buildTemplateChips(_ccTemplates, _chiefComplaintController),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _medicalHistoryController,
-                          decoration: InputDecoration(labelText: 'Medical History (Optional)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: '${l10n.medicalHistory} ${l10n.optional}', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
                         ),
                         _buildTemplateChips(_hxTemplates, _medicalHistoryController),
@@ -374,7 +373,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                     ),
 
                     _buildSectionCard(
-                      title: 'Diagnostics (Optional)',
+                      title: l10n.diagnostics,
                       icon: Icons.biotech_outlined,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -397,14 +396,14 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                       children: [
                         TextFormField(
                           controller: _investigationController,
-                          decoration: InputDecoration(labelText: 'Investigations & Imaging', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: l10n.investigationsImaging, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
                         ),
                         _buildTemplateChips(_invTemplates, _investigationController),
                         
                         if (_selectedImages.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                          const Text('Attached Documents:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)), // يمكن ترجمتها لاحقاً
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 90,
@@ -445,13 +444,13 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                         
                         TextFormField(
                           controller: _differentialDiagnosisController,
-                          decoration: InputDecoration(labelText: 'Differential Diagnosis', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: l10n.differentialDiagnosis, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _finalDiagnosisController,
-                          decoration: InputDecoration(labelText: 'Final Diagnosis', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: l10n.finalDiagnosis, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
                         ),
                         _buildTemplateChips(_dxTemplates, _finalDiagnosisController),
@@ -459,12 +458,12 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                     ),
 
                     _buildSectionCard(
-                      title: 'Management Plan (Optional)',
+                      title: l10n.managementPlan,
                       icon: Icons.medical_services_outlined,
                       children: [
                         TextFormField(
                           controller: _firstTreatmentPlanController,
-                          decoration: InputDecoration(labelText: 'Initial Treatment Plan', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                          decoration: InputDecoration(labelText: l10n.initialTreatmentPlan, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                           maxLines: 3,
                         ),
                         _buildTemplateChips(_rxTemplates, _firstTreatmentPlanController),
@@ -478,7 +477,7 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _savePatient,
                         icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Save Patient File', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        label: Text(l10n.savePatientFile, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0F766E),
                           foregroundColor: Colors.white,
