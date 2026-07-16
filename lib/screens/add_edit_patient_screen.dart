@@ -7,6 +7,9 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import '../models/patient.dart';
 import '../services/database_helper.dart';
 
+// 🔴 تنبيه هام: قم بفك التعليق (إزالة //) عن السطر التالي واكتب مسار ملف خدمة جوجل درايف الخاص بك
+// import '../services/google_drive_service.dart'; 
+
 class AddEditPatientScreen extends StatefulWidget {
   final Patient? patient;
 
@@ -82,7 +85,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
         setState(() => _isLoading = true);
         
         final inputImage = InputImage.fromFilePath(pickedFile.path);
-        // نستخدم المحرك اللاتيني الذي يقرأ الإنجليزية والأرقام والرموز الطبية بكفاءة
         final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
         final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
         
@@ -258,6 +260,22 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Patient saved successfully!'), backgroundColor: Colors.green),
           );
+          
+          // ==============================================================
+          // النسخ الاحتياطي التلقائي (في الخلفية بصمت)
+          // ==============================================================
+          Future.microtask(() async {
+            try {
+              // 🔴🔴 يا دكتور ماجد: استبدل السطر أدناه بالكود الخاص بك الذي يرفع للـ Drive
+              // مثال: await GoogleDriveService().backupDataToDrive();
+              
+              debugPrint("Silent backup triggered after saving patient."); 
+            } catch (e) {
+              debugPrint("Silent backup failed: $e"); 
+            }
+          });
+          // ==============================================================
+
           Navigator.pop(context, true);
         }
       } catch (e) {
@@ -360,7 +378,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // زر الـ OCR الجديد!
                           IconButton(
                             icon: const Icon(Icons.document_scanner_outlined, color: Color(0xFF1E3A8A)),
                             tooltip: 'Scan Text from Document',
@@ -368,7 +385,6 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
                             style: IconButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1)),
                           ),
                           const SizedBox(width: 8),
-                          // زر الكاميرا للصور
                           IconButton(
                             icon: const Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
                             tooltip: 'Attach Baseline Documents',
