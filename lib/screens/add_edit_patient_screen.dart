@@ -261,15 +261,16 @@ class _AddEditPatientScreenState extends State<AddEditPatientScreen> {
             const SnackBar(content: Text('Patient saved successfully!'), backgroundColor: Colors.green),
           );
           
-          // ==============================================================
+                    // ==============================================================
           // النسخ الاحتياطي التلقائي (في الخلفية بصمت)
           // ==============================================================
           Future.microtask(() async {
             try {
-              // 🔴🔴 يا دكتور ماجد: استبدل السطر أدناه بالكود الخاص بك الذي يرفع للـ Drive
-              // مثال: await GoogleDriveService().backupDataToDrive();
+              // إنشاء نسخة من خدمة جوجل درايف ثم استدعاء دالة الرفع
+              final driveService = GoogleDriveService();
+              await driveService.backupDatabase();
               
-              debugPrint("Silent backup triggered after saving patient."); 
+              debugPrint("Silent backup completed successfully after saving patient."); 
             } catch (e) {
               debugPrint("Silent backup failed: $e"); 
             }
