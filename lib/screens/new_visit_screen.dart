@@ -7,7 +7,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import '../models/visit.dart';
 import '../services/database_helper.dart'; 
 import '../services/google_drive_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // <--- استيراد الترجمة
+import '../l10n/app_localizations.dart';
 
 class NewVisitScreen extends StatefulWidget {
   final String patientId;
