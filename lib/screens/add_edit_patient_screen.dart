@@ -8,7 +8,7 @@ import '../models/patient.dart';
 import '../services/database_helper.dart';
 
 // 🔴 تنبيه هام: قم بفك التعليق (إزالة //) عن السطر التالي واكتب مسار ملف خدمة جوجل درايف الخاص بك
-// import '../services/google_drive_service.dart'; 
+import '../services/google_drive_service.dart'; 
 
 class AddEditPatientScreen extends StatefulWidget {
   final Patient? patient;
