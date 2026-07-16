@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
             // ... الكود السابق الخاص بـ MaterialApp ...
       
       // --- إعدادات اللغة (Localization) ---
-      localizationsDelegates: const [
+      localizationsDelegates:  [
         AppLocalizations.delegate, // القاموس الخاص بنا
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
