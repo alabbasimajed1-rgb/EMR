@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/google_drive_service.dart';
 import '../l10n/app_localizations.dart';
-import '../main.dart'; // <--- استيراد ملف main.dart للوصول لدالة MyApp.setLocale
+import '../main.dart'; 
 
 class SettingsScreen extends StatefulWidget {
   final Function(Locale)? onLocaleChange;
@@ -48,7 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // --- الدالة المحدثة لتغيير اللغة فوراً ---
   Future<void> _changeLanguage(String langCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language_code', langCode);
@@ -57,13 +56,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     
     if (mounted) {
-      // إجبار التطبيق بالكامل على التحديث للغة الجديدة
       MyApp.setLocale(context, Locale(langCode));
     }
     
     if (widget.onLocaleChange != null) {
       widget.onLocaleChange!(Locale(langCode));
     }
+  }
+
+  // --- دالة تغيير الرمز السري الجديدة ---
+  Future<void> _showChangePinDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final currentPinController = TextEditingController();
+    final newPinController = TextEditingController();
+    final confirmPinController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(l10n.changePin, style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPinController,
+                decoration: InputDecoration(labelText: l10n.currentPin, prefixIcon: const Icon(Icons.lock_outline)),
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: newPinController,
+                decoration: InputDecoration(labelText: l10n.newPin, prefixIcon: const Icon(Icons.lock_reset)),
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmPinController,
+                decoration: InputDecoration(labelText: l10n.confirmNewPin, prefixIcon: const Icon(Icons.check_circle_outline)),
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel, style: const TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white),
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                
+                // جلب الرمز القديم المحفوظ من الذاكرة (سواء كان مفتاحه pin أو user_pin)
+                final savedPin = prefs.getString('pin') ?? prefs.getString('user_pin') ?? '';
+
+                if (currentPinController.text != savedPin) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.incorrectCurrentPin), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+
+                if (newPinController.text != confirmPinController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.pinsDoNotMatch), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                
+                if (newPinController.text.length < 4) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('PIN must be 4 digits'), backgroundColor: Colors.red), 
+                  );
+                  return;
+                }
+
+                // حفظ الرمز الجديد في نفس المفتاح الذي يستخدمه التطبيق
+                if (prefs.containsKey('pin')) {
+                  await prefs.setString('pin', newPinController.text);
+                } else {
+                  await prefs.setString('user_pin', newPinController.text);
+                }
+                
+                if (context.mounted) {
+                  Navigator.pop(context); // إغلاق النافذة
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.pinChangedSuccess), backgroundColor: Colors.green),
+                  );
+                }
+              },
+              child: Text(l10n.save),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _performBackup() async {
@@ -186,6 +281,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             
             const SizedBox(height: 32),
+            
+            // --- قسم الأمان الجديد ---
+            Text(l10n.security, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: SizedBox(
+                width: double.infinity, height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: _showChangePinDialog,
+                  icon: const Icon(Icons.password),
+                  label: Text(l10n.changePin, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF1E3A8A), side: const BorderSide(color: Color(0xFF1E3A8A)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
             Text(l10n.dataCloudBackup, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             const SizedBox(height: 16),
             Container(
