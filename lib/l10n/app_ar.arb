@@ -46,5 +46,15 @@
   "newPatient": "مريض جديد",
   "myPatients": "قائمة المرضى",
   "clinicalReports": "التقارير السريرية",
-  "secureClinic": "تأمين العيادة"
+  "secureClinic": "تأمين العيادة",
+  "security": "الأمان والحماية",
+  "changePin": "تغيير رمز الدخول",
+  "currentPin": "الرمز الحالي",
+  "newPin": "الرمز الجديد",
+  "confirmNewPin": "تأكيد الرمز الجديد",
+  "pinChangedSuccess": "تم تغيير الرمز بنجاح!",
+  "incorrectCurrentPin": "الرمز الحالي غير صحيح",
+  "pinsDoNotMatch": "الرموز الجديدة غير متطابقة",
+  "cancel": "إلغاء",
+  "save": "حفظ"
 }
