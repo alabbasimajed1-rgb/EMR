@@ -46,5 +46,15 @@
   "newPatient": "New Patient",
   "myPatients": "My Patients",
   "clinicalReports": "Clinical Reports",
-  "secureClinic": "Secure Clinic"
+  "secureClinic": "Secure Clinic",
+  "security": "Security",
+  "changePin": "Change PIN",
+  "currentPin": "Current PIN",
+  "newPin": "New PIN",
+  "confirmNewPin": "Confirm New PIN",
+  "pinChangedSuccess": "PIN changed successfully!",
+  "incorrectCurrentPin": "Incorrect current PIN",
+  "pinsDoNotMatch": "New PINs do not match",
+  "cancel": "Cancel",
+  "save": "Save"
 }
