@@ -8,8 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/visit.dart';
 import '../models/patient.dart';
 import '../services/database_helper.dart'; 
-import '../l10n/app_localizations.dart'; // <--- المسار المباشر الصحيح
-
+import '../l10n/app_localizations.dart'; // <--- المسار الصحيح للترجمة
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -76,7 +75,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final doctorName = prefs.getString('doctor_name') ?? 'Clinic Doctor';
       final specialty = prefs.getString('doctor_specialty') ?? 'Medical Specialty';
-      // تحديد اللغة الحالية للتطبيق لتوجيه الـ PDF
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
       final arabicFont = await PdfGoogleFonts.cairoRegular();
@@ -88,7 +86,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(40),
-          // تحديد اتجاه الصفحة بالكامل (مهم جداً للعربي)
           textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
           footer: (pw.Context context) {
             return pw.Container(
@@ -97,8 +94,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: pw.Column(
                 crossAxisAlignment: isArabic ? pw.CrossAxisAlignment.start : pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text(doctorName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.black)),
-                  pw.Text(specialty, style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                  // إجبار الـ PDF على قراءة الأسماء بشكل عربي (RTL) لكي تشبك الحروف حتى لو التقرير إنجليزي
+                  pw.Text(doctorName, textDirection: pw.TextDirection.rtl, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.black)),
+                  pw.Text(specialty, textDirection: pw.TextDirection.rtl, style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
                 ]
               )
             );
@@ -131,9 +129,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('${isArabic ? 'اسم المريض:' : 'Patient Name:'} ${_selectedPatient!.fullName}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+                    // تم فصل العنوان عن الاسم لمعالجة الخط العربي بشكل مستقل
+                    pw.Row(children: [
+                      pw.Text('${isArabic ? 'اسم المريض:' : 'Patient Name:'} ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+                      pw.Text(_selectedPatient!.fullName, textDirection: pw.TextDirection.rtl, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+                    ]),
                     pw.Text('${isArabic ? 'العمر:' : 'Age:'} ${_selectedPatient!.age}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                    // لاحظ كيف نعالج الجنس بناء على اللغة (بما أنه محفوظ كـ Male/Female)
                     pw.Text('${isArabic ? 'الجنس:' : 'Gender:'} ${isArabic ? (_selectedPatient!.gender == 'Male' ? 'ذكر' : 'أنثى') : _selectedPatient!.gender}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
                   ]
                 )
@@ -147,42 +148,42 @@ class _ReportsScreenState extends State<ReportsScreen> {
               if (_selectedPatient!.chiefComplaint.isNotEmpty) ...[
                 pw.Text(isArabic ? 'الشكوى الرئيسية:' : 'Chief Complaint:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.chiefComplaint, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.chiefComplaint, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 12),
               ],
 
               if (_selectedPatient!.medicalHistory.isNotEmpty) ...[
                 pw.Text(isArabic ? 'التاريخ الطبي:' : 'Medical History (Clinical Data):', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.medicalHistory, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.medicalHistory, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 12),
               ],
 
               if (_selectedPatient!.investigationAndImaging.isNotEmpty) ...[
                 pw.Text(isArabic ? 'الفحوصات والأشعة:' : 'Investigations & Imaging:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.investigationAndImaging, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.investigationAndImaging, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 12),
               ],
               
               if (_selectedPatient!.differentialDiagnosis.isNotEmpty) ...[
                 pw.Text(isArabic ? 'التشخيص التفريقي:' : 'Differential Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.differentialDiagnosis, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.differentialDiagnosis, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 12),
               ],
 
               if (_selectedPatient!.finalDiagnosis.isNotEmpty) ...[
                 pw.Text(isArabic ? 'التشخيص النهائي:' : 'Final Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.finalDiagnosis, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.finalDiagnosis, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 12),
               ],
 
               if (_selectedPatient!.firstTreatmentPlan.isNotEmpty) ...[
                 pw.Text(isArabic ? 'خطة العلاج المبدئية:' : 'Initial Treatment Plan:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blueGrey800)),
                 pw.SizedBox(height: 2),
-                pw.Text(_selectedPatient!.firstTreatmentPlan, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
+                pw.Text(_selectedPatient!.firstTreatmentPlan, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.5)),
                 pw.SizedBox(height: 24),
               ],
             ],
@@ -217,24 +218,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       pw.SizedBox(height: 5),
                       
                       pw.Text(isArabic ? 'الشكوى / الإجراء:' : 'New complaint / Procedure:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800, fontSize: 10)),
-                      pw.Text(v.procedure, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
+                      pw.Text(v.procedure, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
                       pw.SizedBox(height: 8),
                       
                       if (v.investigations.isNotEmpty) ...[
                         pw.Text(isArabic ? 'الفحوصات:' : 'Investigations:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800, fontSize: 10)),
-                        pw.Text(v.investigations, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
+                        pw.Text(v.investigations, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
                         pw.SizedBox(height: 8),
                       ],
                       
                       if (v.treatments.isNotEmpty) ...[
                         pw.Text(isArabic ? 'العلاج الموصوف:' : 'Treatments Prescribed:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800, fontSize: 10)),
-                        pw.Text(v.treatments, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
+                        pw.Text(v.treatments, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
                         pw.SizedBox(height: 8),
                       ],
 
                       if (v.advices.isNotEmpty) ...[
                         pw.Text(isArabic ? 'نصائح:' : 'Advices:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800, fontSize: 10)),
-                        pw.Text(v.advices, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
+                        pw.Text(v.advices, textDirection: pw.TextDirection.rtl, style: const pw.TextStyle(fontSize: 11, lineSpacing: 1.2)),
                       ],
                     ],
                   ),
@@ -258,9 +259,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // اختصار للقاموس
     final l10n = AppLocalizations.of(context);
-    // التحقق من أن القاموس ليس فارغاً (لتجنب الأخطاء إذا لم يتم تحميله بعد)
     if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
